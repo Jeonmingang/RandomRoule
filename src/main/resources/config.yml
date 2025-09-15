@@ -19,6 +19,16 @@ messages:
   give_player_not_found: "&c플레이어를 찾을 수 없습니다(온라인만)."
   give_invalid_amount: "&c올바른 수량을 입력하세요."
   give_success: "&a%player% 에게 &e%key%&a 열쇠 아이템을 &ex%amount%&a 지급했습니다."
-titles: { settings: "룰렛 설정: %key% (닫으면 저장)", preview: "룰렛 미리보기: %key%", spinner: "룰렛 뽑기: %key%" }
-gui: { preview_draw_button_name: "&a[ 뽑기 시작 ]", preview_draw_button_lore: ["&7위 목록에서 확률을 확인하세요.","&f클릭 시 27칸 룰렛이 회전합니다."] }
-spinner: { glass-name: "&f", ticks-per-step-start: 2, extra-steps-random: 35 }
+titles:
+  settings: "룰렛 설정: %key% (닫으면 저장)"
+  preview: "룰렛 미리보기: %key%"
+  spinner: "룰렛 뽑기: %key%"
+gui:
+  preview_draw_button_name: "&a[ 뽑기 시작 ]"
+  preview_draw_button_lore:
+    - "&7위 목록에서 확률을 확인하세요."
+    - "&f클릭 시 27칸 룰렛이 회전합니다."
+spinner:
+  glass-name: "&f"
+  ticks-per-step-start: 2
+  extra-steps-random: 35
