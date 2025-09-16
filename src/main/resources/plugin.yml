@@ -1,6 +1,6 @@
 name: UltimateRandomRoulette
 main: com.minkang.ultimate.random.Main
-version: 1.2.7
+version: 1.2.8
 api-version: 1.16
 author: MingangJeon+GPT
 commands:

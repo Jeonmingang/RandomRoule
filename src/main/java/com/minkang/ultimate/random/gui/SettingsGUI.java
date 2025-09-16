@@ -11,9 +11,9 @@ public class SettingsGUI implements Listener{
   private final Main plugin; public SettingsGUI(Main p){ this.plugin=p; }
   public static void open(Main plugin, Player p, Roulette r){
     String title=plugin.getConfig().getString("titles.settings","룰렛 설정: %key% (닫으면 저장)").replace("%key%", r.getKey());
-    Inventory inv=Bukkit.createInventory(p,9, ChatColor.translateAlternateColorCodes('&', title));
+    Inventory inv=Bukkit.createInventory(p,54, ChatColor.translateAlternateColorCodes('&', title));
     int i=0; for(RouletteEntry e: r.getEntries()){
-      if(i>=9) break;
+      if(i>=54) break;
       ItemStack it=e.getItem().clone();
       ItemMeta m=it.getItemMeta();
       if(m!=null){
@@ -53,6 +53,12 @@ public class SettingsGUI implements Listener{
     if(e.getRawSlot() < e.getView().getTopInventory().getSize()){
       ItemStack cur=e.getCurrentItem();
       if(cur!=null && cur.getType()!=Material.AIR){
+        if(e.getClick()==ClickType.DROP || e.getClick()==ClickType.CONTROL_DROP || e.getClick()==ClickType.MIDDLE){
+          e.setCurrentItem(new ItemStack(Material.AIR));
+          ((Player)e.getWhoClicked()).playSound(e.getWhoClicked().getLocation(), Sound.ENTITY_ITEM_BREAK, 0.6f, 1.2f);
+          e.setCancelled(true);
+          return;
+        }
         int delta=0;
         if(e.getClick()==ClickType.LEFT) delta=1;
         else if(e.getClick()==ClickType.RIGHT) delta=-1;

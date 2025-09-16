@@ -13,22 +13,34 @@ messages:
   draw_win: "&a축하합니다! &e%item%&a 를 획득했습니다!"
   no_items: "&c설정된 아이템이 없습니다. /랜덤 설정 %key% 로 등록하세요."
   setting_hint_1: "&7[Tip] 상단 인벤의 아이템을 &e좌클릭(+1) / 우클릭(-1)&7, &e쉬프트 클릭(±10)&7으로 가중치를 조절하세요."
-  setting_hint_2: "&7[Tip] 인벤토리를 닫으면 현재 구성과 가중치가 저장됩니다."
+  setting_hint_2: "&7[Tip] &eQ(드롭)&7 또는 &e휠클릭&7으로 슬롯 비우기. 인벤을 닫으면 저장됩니다."
   rare_broadcast: "&d&l[대박]&r &e%player%&r 님이 &b%key%&r 룰렛에서 &6가장 낮은 확률의 아이템&r &f[%item%]&r 을 뽑았습니다! 모두 축하해주세요!!"
   give_need_trigger: "&c해당 키의 열쇠 아이템이 설정되지 않았습니다. 먼저 /랜덤 아이템 %key% 로 지정하세요."
   give_player_not_found: "&c플레이어를 찾을 수 없습니다(온라인만)."
   give_invalid_amount: "&c올바른 수량을 입력하세요."
   give_success: "&a%player% 에게 &e%key%&a 열쇠 아이템을 &ex%amount%&a 지급했습니다."
+
 titles:
   settings: "룰렛 설정: %key% (닫으면 저장)"
   preview: "룰렛 미리보기: %key%"
   spinner: "룰렛 뽑기: %key%"
+
+preview:
+  show-weight: true
+  show-chance: true
+  weight-format: "&7가중치: &e%weight%"
+  chance-format: "&7확률: &e%chance%%"
+
 gui:
   preview_draw_button_name: "&a[ 뽑기 시작 ]"
   preview_draw_button_lore:
     - "&7위 목록에서 확률을 확인하세요."
     - "&f클릭 시 27칸 룰렛이 회전합니다."
+
 spinner:
   glass-name: "&f"
-  ticks-per-step-start: 2
-  extra-steps-random: 35
+  glass-material: "WHITE_STAINED_GLASS_PANE"
+  ticks-per-step-start: 1
+  base-cycles-per-size: 2
+  min-base-cycles: 12
+  extra-steps-random: 15

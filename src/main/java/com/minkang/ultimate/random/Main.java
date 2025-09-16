@@ -17,7 +17,7 @@ public class Main extends JavaPlugin {
     Bukkit.getPluginManager().registerEvents(new SettingsGUI(this),this);
     Bukkit.getPluginManager().registerEvents(new PreviewGUI(this),this);
     Bukkit.getPluginManager().registerEvents(new InteractListener(this),this);
-    getLogger().info("UltimateRandomRoulette enabled.");
+    getLogger().info("UltimateRandomRoulette v"+getDescription().getVersion()+" enabled.");
   }
   public void onDisable(){ manager.save(); }
   public RouletteManager getManager(){ return manager; }

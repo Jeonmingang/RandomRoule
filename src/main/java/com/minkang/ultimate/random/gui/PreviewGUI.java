@@ -10,14 +10,18 @@ public class PreviewGUI implements Listener{
   public static void open(Main plugin, Player p, Roulette r){
     String title=plugin.getConfig().getString("titles.preview","룰렛 미리보기: %key%").replace("%key%", r.getKey());
     Inventory inv=Bukkit.createInventory(p,54, ChatColor.translateAlternateColorCodes('&', title));
+    boolean showWeight=plugin.getConfig().getBoolean("preview.show-weight", true);
+    boolean showChance=plugin.getConfig().getBoolean("preview.show-chance", true);
+    String weightFmt=ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("preview.weight-format","&7가중치: &e%weight%"));
+    String chanceFmt=ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("preview.chance-format","&7확률: &e%chance%%"));
     int total=r.getTotalWeight(); java.text.DecimalFormat df=new java.text.DecimalFormat("#.##");
     int slot=0; for(RouletteEntry e:r.getEntries()){
       if(slot>=45) break;
       org.bukkit.inventory.ItemStack it=e.getItem().clone(); org.bukkit.inventory.meta.ItemMeta m=it.getItemMeta();
       if(m!=null){
         java.util.List<String> lore=m.hasLore()?m.getLore():new java.util.ArrayList<String>(); if(lore==null) lore=new java.util.ArrayList<String>();
-        double chance=100.0*e.getWeight()/Math.max(1,total);
-        lore.add("§7확률: §e"+df.format(chance)+"% §7(가중치 "+e.getWeight()+")");
+        if(showChance){ double chance=100.0*e.getWeight()/Math.max(1,total); lore.add(chanceFmt.replace("%chance%", df.format(chance))); }
+        if(showWeight){ lore.add(weightFmt.replace("%weight%", String.valueOf(e.getWeight()))); }
         m.setLore(lore); it.setItemMeta(m);
       }
       inv.setItem(slot++, it);
