@@ -1,0 +1,13 @@
+name: UltimateRandomRoulette
+main: com.minkang.ultimate.random.Main
+version: 1.2.12
+api-version: 1.16
+author: MingangJeon+GPT
+commands:
+  random:
+    description: 랜덤 룰렛 관리 명령어 (/랜덤)
+    aliases: [ rr, rnd, 랜덤 ]
+permissions:
+  ultimate.random.admin:
+    description: 랜덤 룰렛 관리자 권한
+    default: op
