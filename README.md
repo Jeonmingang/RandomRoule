@@ -1,7 +1,6 @@
-# UltimateRandomRoulette v1.3.1
-
+# UltimateRandomRoulette v1.3.2
 - Spigot/CatServer 1.16.5, Java 8
-- /랜덤 및 /패키지 기능 포함
-- PackageClaimGUI 람다 캡처 오류(final) 수정
+- **스피너 GUI 복사 방지 패치**: 회전 중 상단 인벤토리 클릭/드래그/시프트클릭/숫자키/더블클릭/수집 금지
+- 기존 기능 유지 (/랜덤, /패키지)
 
-빌드: `mvn -B -DskipTests package`
+Build: `mvn -B -DskipTests package`
