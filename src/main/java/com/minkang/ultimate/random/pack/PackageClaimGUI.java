@@ -12,7 +12,10 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 public class PackageClaimGUI implements Listener {
+  private static final ConcurrentHashMap<UUID, Long> lastClaim = new ConcurrentHashMap<>();
   private final Main plugin;
   public PackageClaimGUI(Main p){ this.plugin=p; }
   public static void open(Main plugin, Player p, PackageDef d){
@@ -37,13 +40,20 @@ public class PackageClaimGUI implements Listener {
     e.setCancelled(true);
     if(e.getRawSlot()==49){
       Player p=(Player)e.getWhoClicked();
+      // debounce: ignore duplicate clicks within 1 second
+      UUID pu = p.getUniqueId();
+      long now = System.currentTimeMillis();
+      Long prev = lastClaim.get(pu);
+      if(prev != null && now - prev < 1000L) { p.sendMessage(main.msg("pkg_claim_busy")); return; }
+      lastClaim.put(pu, now);
       String plain=org.bukkit.ChatColor.stripColor(title);
       String name=plain.replace("패키지 수령:","").trim();
       int idx=name.indexOf(" "); if(idx!=-1) name=name.substring(0,idx).trim();
       final String pkgName=name;
       final Main main=((Main)org.bukkit.Bukkit.getPluginManager().getPlugin("UltimateRandomRoulette"));
       PackageDef d=main.getPackageManager().get(pkgName);
-      if(d==null){ p.closeInventory(); return; }
+      if(d==null){ lastClaim.remove(p.getUniqueId());
+      p.closeInventory(); return; }
       boolean consume=main.getConfig().getBoolean("package.consume-on-claim", true);
       if(consume){
         org.bukkit.inventory.PlayerInventory pinv=p.getInventory();
@@ -58,6 +68,7 @@ public class PackageClaimGUI implements Listener {
       for(ItemStack it: d.getItems()){ if(it==null||it.getType()==Material.AIR) continue; ItemStack give=it.clone(); java.util.Map<Integer,ItemStack> left=p.getInventory().addItem(give); if(!left.isEmpty()) for(ItemStack lf: left.values()) p.getWorld().dropItemNaturally(p.getLocation(), lf); }
       p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.1f);
       p.sendMessage(main.msg("pkg_claim_success").replace("%name%", pkgName));
+      lastClaim.remove(p.getUniqueId());
       p.closeInventory();
     }
   }

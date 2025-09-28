@@ -71,9 +71,10 @@ public class SpinnerGUI {
       }
       void giveReward(){
         ItemStack reward=win.getItem().clone();
-        if(reward.hasItemMeta()){
-          ItemMeta m=reward.getItemMeta(); if(m!=null){ m.setLore(null); reward.setItemMeta(m); }
-        }
+        /* keep original item meta (display name and lore) when giving reward */
+if(reward.hasItemMeta()){
+  /* ensure meta exists but DO NOT remove lore */
+}
         if(p.isOnline()){
           p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.2f);
           String itemName=(reward.hasItemMeta() && reward.getItemMeta().hasDisplayName())? reward.getItemMeta().getDisplayName() : reward.getType().name();
