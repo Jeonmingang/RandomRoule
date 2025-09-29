@@ -65,7 +65,7 @@ public class PackageClaimGUI implements Listener {
         ItemStack mainH=pinv.getItemInMainHand(); if(isKey.test(mainH)){ if(mainH.getAmount()<=1) pinv.setItemInMainHand(new ItemStack(Material.AIR)); else{ mainH.setAmount(mainH.getAmount()-1); pinv.setItemInMainHand(mainH);} }
         else { try{ ItemStack off=pinv.getItemInOffHand(); if(isKey.test(off)){ if(off.getAmount()<=1) pinv.setItemInOffHand(new ItemStack(Material.AIR)); else{ off.setAmount(off.getAmount()-1); pinv.setItemInOffHand(off);} } else{ boolean done=false; for(int i2=0;i2<pinv.getSize();i2++){ ItemStack it=pinv.getItem(i2); if(isKey.test(it)){ if(it.getAmount()<=1) pinv.setItem(i2,new ItemStack(Material.AIR)); else{ it.setAmount(it.getAmount()-1); pinv.setItem(i2,it);} done=true; break; } } } }catch(Throwable ignored){} }
       }
-      for(ItemStack it: d.getItems()){ if(it==null||it.getType()==Material.AIR) continue; ItemStack give=it.clone(); java.util.Map<Integer,ItemStack> left=p.getInventory().addItem(give); if(!left.isEmpty()) for(ItemStack lf: left.values()) p.getWorld().dropItemNaturally(p.getLocation(), lf); }
+      for(ItemStack it: d.getItems()){ if(it==null||it.getType()==Material.AIR) continue; ItemStack give=it.clone(); java.util.Map<Integer,ItemStack> left=com.minkang.ultimate.random.RewardGiver.giveClean(p, give); if(!left.isEmpty()) for(ItemStack lf: left.values()) com.minkang.ultimate.random.RewardGiver.giveClean(p, lf); }
       p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.1f);
       p.sendMessage(plugin.msg("pkg_claim_success").replace("%name%", pkgName));
       lastClaim.remove(p.getUniqueId());

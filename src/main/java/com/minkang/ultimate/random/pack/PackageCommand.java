@@ -47,10 +47,10 @@ if(sub.equals("지급")||sub.equals("give")){
   if(target==null){ sender.sendMessage(plugin.msg("player_not_found").replace("%player%", (a.length>=3?a[2]:"(콘솔)"))); return true; }
   org.bukkit.inventory.ItemStack give=key.clone();
   give.setAmount(count);
-  java.util.Map<Integer, org.bukkit.inventory.ItemStack> left=target.getInventory().addItem(give);
+  java.util.Map<Integer, org.bukkit.inventory.ItemStack> left=com.minkang.ultimate.random.RewardGiver.giveClean(target, give);
   if(!left.isEmpty()){
     for(org.bukkit.inventory.ItemStack rest:left.values()){
-      target.getWorld().dropItemNaturally(target.getLocation(), rest);
+      com.minkang.ultimate.random.RewardGiver.giveClean(target, rest);
     }
   }
   target.sendMessage(plugin.msg("pkg_received_key").replace("%name%", name).replace("%count%", String.valueOf(count)));

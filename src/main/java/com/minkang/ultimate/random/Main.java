@@ -42,13 +42,7 @@ public class Main extends JavaPlugin {
   public NamespacedKey getPdcKey(){ return pdcKey; }
   public NamespacedKey getPkgPdcKey(){ return pkgPdcKey; }
   
-public String msg(String path){
-  String s = getConfig().getString("messages."+path, "");
-  String prefix = getConfig().getString("messages.prefix", "&b[룰렛]&r ");
-  boolean use = getConfig().getBoolean("messages.use-prefix", true);
-  String out = (s == null ? "" : s);
-  return ChatColor.translateAlternateColorCodes('&', (use ? prefix : "") + out);
-}
+public String msg(String path){ String s=getConfig().getString("messages."+path,""); String prefix=getConfig().getString("messages.prefix","&b[룰렛]&r "); boolean use=getConfig().getBoolean("messages.use-prefix", true); return org.bukkit.ChatColor.translateAlternateColorCodes('&', (use?prefix:"")+ (s==null? "": s)); }
 
   public String color(String s){ return ChatColor.translateAlternateColorCodes('&', s); }
 }
