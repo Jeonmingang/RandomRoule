@@ -108,6 +108,7 @@ if(reward.hasItemMeta()){
           p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.2f);
           String itemName=(reward.hasItemMeta() && reward.getItemMeta().hasDisplayName())? reward.getItemMeta().getDisplayName() : reward.getType().name();
           p.sendMessage(plugin.msg("draw_win").replace("%item%", ChatColor.stripColor(itemName)));
+          ItemStack clean = com.minkang.ultimate.random.LoreSanitizer.strip(reward);
           if (GrantService.shouldGive(p)) {  if (p.getInventory().firstEmpty()==-1) { com.minkang.ultimate.random.RewardGiver.giveClean(p, clean); } else { com.minkang.ultimate.random.RewardGiver.giveClean(p, clean); } }
           int min=Integer.MAX_VALUE; for(RouletteEntry re: entries) if(re.getWeight()<min) min=re.getWeight();
           if(win.getWeight()==min){
