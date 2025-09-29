@@ -1,0 +1,94 @@
+messages:
+
+already_spinning: "&c이미 진행 중인 뽑기가 있습니다. 잠시만 기다려주세요."
+pkg_not_found: "&c해당 이름의 패키지가 없습니다: &e%name%"
+pkg_give_no_item: "&c패키지 &e%name%&c 에 지급키(트리거 아이템)가 설정되어 있지 않습니다. /패키지 아이템 %name% 으로 먼저 지정하세요."
+pkg_received_key: "&a패키지 &e%name%&a 키 x&ex%count%&a 를 받았습니다."
+pkg_given_to_player: "&a%player%&a 에게 패키지 &e%name%&a 키 x&ex%count%&a 지급 완료."
+player_not_found: "&c플레이어를 찾을 수 없습니다: %player%"
+  prefix: "&b[룰렛]&r "
+  created: "&a룰렛 &e%key%&a 가 생성되었습니다."
+  exists: "&c이미 존재하는 키입니다: &e%key%"
+  deleted: "&a룰렛 &e%key%&a 를 삭제했습니다."
+  not_found: "&c해당 키의 룰렛이 없습니다: &e%key%"
+  set_item_bind: "&a현재 손에 든 아이템을 &e%key%&a 룰렛 열쇠로 지정했습니다. (우클릭 시 뽑기)"
+  need_item_in_hand: "&c손에 든 아이템이 없습니다."
+  open_settings: "&a설정 GUI를 열었습니다: &e%key%"
+  saved_settings: "&a설정이 저장되었습니다. 총 &e%count%개&a 아이템."
+  open_preview: "&a확률/구성 미리보기: &e%key%"
+  draw_start: "&a룰렛이 회전합니다!"
+  draw_win: "&a축하합니다! &e%item%&a 를 획득했습니다!"
+  no_items: "&c설정된 아이템이 없습니다. /랜덤 설정 %key% 로 등록하세요."
+  need_key: "&c키가 필요합니다. 손/인벤에 &e%key%&c 키를 1개 이상 가지고 계셔야 합니다."
+  setting_hint_1: "&7[Tip] 상단 인벤의 아이템을 &e좌클릭(+1) / 우클릭(-1)&7, &e쉬프트 클릭(±10)&7으로 가중치를 조절하세요."
+  setting_hint_2: "&7[Tip] &eQ(드롭)&7 또는 &e휠클릭&7으로 슬롯 비우기. 인벤을 닫으면 저장됩니다."
+  rare_broadcast: "&d&l[대박]&r &e%player%&r 님이 &b%key%&r 룰렛에서 &6가장 낮은 확률의 아이템&r &f[%item%]&r 을 뽑았습니다! 모두 축하해주세요!!"
+  give_need_trigger: "&c해당 키의 열쇠 아이템이 설정되지 않았습니다. 먼저 /랜덤 아이템 %key% 로 지정하세요."
+  give_player_not_found: "&c플레이어를 찾을 수 없습니다(온라인만)."
+  give_invalid_amount: "&c올바른 수량을 입력하세요."
+  give_success: "&a%player% 에게 &e%key%&a 열쇠 아이템을 &ex%amount%&a 지급했습니다."
+  pkg_created: "&a패키지 &e%name%&a 를 생성했습니다."
+  pkg_exists: "&c이미 존재하는 패키지입니다: &e%name%"
+  pkg_deleted: "&a패키지 &e%name%&a 를 삭제했습니다."
+  pkg_not_found: "&c해당 패키지가 없습니다: &e%name%"
+  pkg_open_settings: "&a패키지 설정 GUI를 열었습니다: &e%name%"
+  pkg_saved_settings: "&a패키지 저장 완료 (&e%count%개&a 아이템)."
+  pkg_set_item_bind: "&a손에 든 아이템을 패키지 &e%name%&a 열쇠로 지정했습니다. (우클릭 시 수령 GUI)"
+  pkg_need_item_in_hand: "&c손에 든 아이템이 없습니다."
+  pkg_open_claim: "&a패키지 보상 수령 GUI: &e%name%"
+  pkg_claim_success: "&a패키지 &e%name%&a 보상을 지급했습니다."
+  pkg_need_key: "&c패키지 키가 필요합니다. 손/인벤에 &e%name%&c 키를 1개 이상 가지고 계셔야 합니다."
+
+titles:
+  settings: "룰렛 설정: %key% (닫으면 저장)"
+  preview: "룰렛 미리보기: %key%"
+  spinner: "룰렛 뽑기: %key%"
+  pkg_settings: "패키지 설정: %name% (닫으면 저장)"
+  pkg_claim: "패키지 수령: %name%"
+
+preview:
+  show-weight: true
+  show-chance: true
+  weight-format: "&7가중치: &e%weight%"
+  chance-format: "&7확률: &e%chance%%"
+  remove-tags: ["가중치", "확률"]
+  extra-lore-top: []
+  extra-lore-bottom: []
+
+gui:
+  preview_draw_button_name: "&a[ 뽑기 시작 ]"
+  preview_draw_button_lore:
+    - "&7위 목록에서 확률을 확인하세요."
+    - "&f클릭 시 27칸 룰렛이 회전합니다."
+  draw_consumes_key: true
+
+spinner:
+  glass-name: "&f"
+  glass-material: "WHITE_STAINED_GLASS_PANE"
+  ticks-per-step-start: 1
+  base-cycles-per-size: 2
+  min-base-cycles: 12
+  extra-steps-random: 15
+  show-chance-only: true
+  chance-format: "&7확률: &e%chance%%"
+  use-pointer-panes: true
+  pointer-material: "HOPPER"
+  pointer-name: "&6▲ 중앙 슬롯 ▼"
+  center-glow: true
+
+package:
+  consume-on-claim: true
+  claim-button-name: "&a[ 보상 수령 ]"
+  claim-button-lore:
+    - "&7아래 보상 아이템이 지급됩니다."
+    - "&f인벤토리가 가득차면 바닥에 드롭됩니다."
+  key-header: "&6&l[ 패키지 ] &e%name%"
+  key-subtitle: "&8━ &7보상 목록"
+  key-entry: "&7- &f%item% &7x&ex%amount%"
+  key-footer: "&8클릭하여 수령 GUI 열기"
+
+randomkey:
+  key-header: "&6&l[ 뽑기 ] &e%key%"
+  key-subtitle: "&8━ &7뽑기 구성 (확률)"
+  key-entry: "&7- &f%item% &7(&e%chance%%%&7)"
+  key-footer: "&8우클릭 시 뽑기 GUI"
