@@ -1,7 +1,7 @@
 name: UltimateRandomRoulette
 main: com.minkang.ultimate.random.Main
 version: 1.3.7
-api-version: 1.16
+api-version: 1.3.7
 author: MingangJeon
 commands:
   random:

@@ -17,6 +17,7 @@ public class Main extends JavaPlugin {
   private final java.util.Set<java.util.UUID> spinning = java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>());
   public boolean tryBeginSpin(org.bukkit.entity.Player p){ return spinning.add(p.getUniqueId()); }
   public void endSpin(org.bukkit.entity.Player p){ spinning.remove(p.getUniqueId()); }
+  public boolean tryEndSpinOnce(org.bukkit.entity.Player p){ return spinning.remove(p.getUniqueId()); }
 
   private RouletteManager manager; private PackageManager packageManager;
   private NamespacedKey pdcKey; private NamespacedKey pkgPdcKey;

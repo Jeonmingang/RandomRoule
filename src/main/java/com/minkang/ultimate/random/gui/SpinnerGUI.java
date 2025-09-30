@@ -117,6 +117,7 @@ double chance=100.0*re.getWeight()/Math.max(1,totalWeight);
       void giveReward(){
         if(done[0]) return;
         done[0] = true;
+        if(!plugin.tryEndSpinOnce(p)) return;
 
         ItemStack reward=win.getItem().clone();
         /* keep original item meta (display name and lore) when giving reward */
