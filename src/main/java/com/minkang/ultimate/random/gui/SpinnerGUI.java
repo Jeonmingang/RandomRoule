@@ -69,8 +69,12 @@ ItemStack withChanceLore(RouletteEntry re, boolean glow){
         }
         org.bukkit.inventory.meta.ItemMeta m=it.getItemMeta();
         if(m!=null){
-          java.util.List<String> lore = m.hasLore() ? new java.util.ArrayList<>(m.getLore()) : new java.util.ArrayList<String>();
-          double chance=100.0*re.getWeight()/Math.max(1,totalWeight);
+          java.util.List<String> lore = new java.util.ArrayList<String>();
+          ItemStack srcClean2 = sanitized(it);
+          if (m.hasLore()) lore.addAll(m.getLore());
+          if (srcClean2 != null && srcClean2.hasItemMeta() && srcClean2.getItemMeta().hasLore())
+            lore.addAll(srcClean2.getItemMeta().getLore());
+double chance=100.0*re.getWeight()/Math.max(1,totalWeight);
           lore.add(chanceFmt.replace("%chance%", df.format(chance)));
           m.setLore(new java.util.ArrayList<>(new java.util.LinkedHashSet<>(lore)));
           if(glow){
@@ -109,7 +113,8 @@ if(reward.hasItemMeta()){
           String itemName=(reward.hasItemMeta() && reward.getItemMeta().hasDisplayName())? reward.getItemMeta().getDisplayName() : reward.getType().name();
           p.sendMessage(plugin.msg("draw_win").replace("%item%", ChatColor.stripColor(itemName)));
           ItemStack clean = com.minkang.ultimate.random.LoreSanitizer.strip(reward);
-          if (GrantService.shouldGive(p)) {  if (p.getInventory().firstEmpty()==-1) { com.minkang.ultimate.random.RewardGiver.giveClean(p, clean); } else { com.minkang.ultimate.random.RewardGiver.giveClean(p, clean); } }
+com.minkang.ultimate.random.RewardGiver.giveClean(p, clean);
+else { com.minkang.ultimate.random.RewardGiver.giveClean(p, clean); } }
           int min=Integer.MAX_VALUE; for(RouletteEntry re: entries) if(re.getWeight()<min) min=re.getWeight();
           if(win.getWeight()==min){
             String msg=plugin.getConfig().getString("messages.rare_broadcast","&d&l[대박]&r %player% 이(가) %key% 에서 가장 낮은 확률의 아이템 [%item%] 을 뽑았습니다!");

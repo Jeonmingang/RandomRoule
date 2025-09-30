@@ -23,7 +23,7 @@ titles:
   settings: "룰렛 설정: %key%"
 
 spinner:
-  show-chance-only: false
+  show-chance-only: true
   center-glow: true
   chance-format: "&7확률: &e%chance%%%"
   weight-format: "&7가중치: &e%weight%"

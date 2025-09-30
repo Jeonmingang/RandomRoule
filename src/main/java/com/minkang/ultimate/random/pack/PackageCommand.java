@@ -32,6 +32,25 @@ if(sub.equals("지급")||sub.equals("give")){
   String name=a[1].toLowerCase();
   PackageDef d=plugin.getPackageManager().get(name);
   if(d==null){ sender.sendMessage(plugin.msg("pkg_not_found").replace("%name%", name)); return true; }
+  int count=1; if(a.length>=4){ try{ count=Math.max(1, Integer.parseInt(a[3])); }catch(Exception ignored){} }
+  org.bukkit.entity.Player target=null;
+  if(a.length>=3){ target=org.bukkit.Bukkit.getPlayerExact(a[2]); }
+  else if(sender instanceof org.bukkit.entity.Player){ target=(org.bukkit.entity.Player)sender; }
+  if(target==null){ sender.sendMessage(plugin.msg("player_not_found").replace("%player%", (a.length>=3?a[2]:"(콘솔)"))); return true; }
+  for(int i=0;i<count;i++){
+    for(org.bukkit.inventory.ItemStack it : d.getItems()){
+      if(it==null) continue; com.minkang.ultimate.random.RewardGiver.giveClean(target, it.clone());
+    }
+  }
+  target.sendMessage(plugin.msg("pkg_claim_success").replace("%name%", name));
+  sender.sendMessage(plugin.msg("pkg_given_to_player").replace("%player%", target.getName()).replace("%name%", name).replace("%count%", String.valueOf(count)));
+  return true;
+}
+
+  if(a.length<2){ sender.sendMessage("§d/패키지 지급 <패키지> [플레이어] [수량]"); return true; }
+  String name=a[1].toLowerCase();
+  PackageDef d=plugin.getPackageManager().get(name);
+  if(d==null){ sender.sendMessage(plugin.msg("pkg_not_found").replace("%name%", name)); return true; }
   org.bukkit.inventory.ItemStack key=d.getTriggerItem();
   if(key==null){ sender.sendMessage(plugin.msg("pkg_give_no_item").replace("%name%", name)); return true; }
   int count=1;
@@ -53,6 +72,26 @@ if(sub.equals("지급")||sub.equals("give")){
       com.minkang.ultimate.random.RewardGiver.giveClean(target, rest);
     }
   }
+  target.sendMessage(plugin.msg("pkg_received_key").replace("%name%", name).replace("%count%", String.valueOf(count)));
+  sender.sendMessage(plugin.msg("pkg_given_to_player").replace("%player%", target.getName()).replace("%name%", name).replace("%count%", String.valueOf(count)));
+  return true;
+}
+if(sub.equals("키지급")||sub.equalsIgnoreCase("key")){
+  if(!isAdmin(sender)){ sender.sendMessage(ChatColor.RED+"권한이 없습니다."); return true; }
+  if(a.length<2){ sender.sendMessage("§d/패키지 키지급 <패키지> [플레이어] [수량]"); return true; }
+  String name=a[1].toLowerCase();
+  PackageDef d=plugin.getPackageManager().get(name);
+  if(d==null){ sender.sendMessage(plugin.msg("pkg_not_found").replace("%name%", name)); return true; }
+  org.bukkit.inventory.ItemStack key=d.getTriggerItem();
+  if(key==null){ sender.sendMessage(plugin.msg("pkg_give_no_item").replace("%name%", name)); return true; }
+  int count=1; if(a.length>=4){ try{ count=Math.max(1, Integer.parseInt(a[3])); }catch(Exception ignored){} }
+  org.bukkit.entity.Player target=null;
+  if(a.length>=3){ target=org.bukkit.Bukkit.getPlayerExact(a[2]); }
+  else if(sender instanceof org.bukkit.entity.Player){ target=(org.bukkit.entity.Player)sender; }
+  if(target==null){ sender.sendMessage(plugin.msg("player_not_found").replace("%player%", (a.length>=3?a[2]:"(콘솔)"))); return true; }
+  org.bukkit.inventory.ItemStack give=key.clone(); give.setAmount(count);
+  java.util.Map<Integer, org.bukkit.inventory.ItemStack> left=com.minkang.ultimate.random.RewardGiver.giveClean(target, give);
+  if(!left.isEmpty()){ for(org.bukkit.inventory.ItemStack rest:left.values()){ com.minkang.ultimate.random.RewardGiver.giveClean(target, rest);} }
   target.sendMessage(plugin.msg("pkg_received_key").replace("%name%", name).replace("%count%", String.valueOf(count)));
   sender.sendMessage(plugin.msg("pkg_given_to_player").replace("%player%", target.getName()).replace("%name%", name).replace("%count%", String.valueOf(count)));
   return true;
