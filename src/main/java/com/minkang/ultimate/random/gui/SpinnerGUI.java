@@ -9,6 +9,12 @@ import org.bukkit.enchantments.Enchantment;
 import com.minkang.ultimate.random.LoreSanitizer;
 import com.minkang.ultimate.random.GrantService;
 public class SpinnerGUI {
+
+  private static org.bukkit.inventory.ItemStack sanitized(org.bukkit.inventory.ItemStack src){
+    if(src==null) return null;
+    try { return src.clone(); } catch(Throwable t){ return src; }
+  }
+
   public static void start(final Main plugin, final Player p, final Roulette r){
     if(!plugin.tryBeginSpin(p)){ p.sendMessage(plugin.msg("already_spinning")); p.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1f, 0.7f); return; }
 
