@@ -50,7 +50,7 @@ public class PackageCommand implements CommandExecutor, TabCompleter {
       if(!isAdmin(sender)){ sender.sendMessage(ChatColor.RED+"권한이 없습니다."); return true; }
       if(a.length<2){ sender.sendMessage("§d/패키지 삭제 <이름>"); return true; }
       String name=a[1].toLowerCase();
-      if(plugin.getPackageManager().delete(name)==null){ sender.sendMessage(plugin.msg("pkg_not_found").replace("%name%",name)); return true; }
+      if(!plugin.getPackageManager().delete(name)){ sender.sendMessage(plugin.msg("pkg_not_found").replace("%name%",name)); return true; }
       sender.sendMessage(plugin.msg("pkg_deleted").replace("%name%",name));
       return true;
     }
