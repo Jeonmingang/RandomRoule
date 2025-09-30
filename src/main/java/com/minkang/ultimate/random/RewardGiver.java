@@ -13,6 +13,7 @@ public final class RewardGiver {
      * return: Inventory#addItem 과 동일한 leftover map (드랍 시엔 빈 맵)
      */
     public static Map<Integer, ItemStack> giveClean(Player p, ItemStack item){
+        if(!com.minkang.ultimate.random.GrantService.shouldGive(p)) return new java.util.HashMap<>();
         Map<Integer, ItemStack> leftovers = new HashMap<>();
         if(p==null || item==null) return leftovers;
         ItemStack clean = LoreSanitizer.strip(item);

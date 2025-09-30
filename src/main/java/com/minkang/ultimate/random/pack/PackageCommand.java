@@ -50,7 +50,7 @@ public class PackageCommand implements CommandExecutor, TabCompleter {
       if(!isAdmin(sender)){ sender.sendMessage(ChatColor.RED+"권한이 없습니다."); return true; }
       if(a.length<2){ sender.sendMessage("§d/패키지 삭제 <이름>"); return true; }
       String name=a[1].toLowerCase();
-      if(plugin.getPackageManager().delete(name) == false){ sender.sendMessage(plugin.msg("pkg_not_found").replace("%name%",name)); return true; }
+      if(plugin.getPackageManager().delete(name)==null){ sender.sendMessage(plugin.msg("pkg_not_found").replace("%name%",name)); return true; }
       sender.sendMessage(plugin.msg("pkg_deleted").replace("%name%",name));
       return true;
     }
@@ -128,15 +128,10 @@ public class PackageCommand implements CommandExecutor, TabCompleter {
       else if(sender instanceof Player){ target=(Player)sender; }
       if(target==null){ sender.sendMessage(plugin.msg("player_not_found").replace("%player%", (a.length>=3?a[2]:"(콘솔)"))); return true; }
       ItemStack give=key.clone(); give.setAmount(count);
-      
       java.util.Map<Integer, ItemStack> left = com.minkang.ultimate.random.RewardGiver.giveClean(target, give);
       if(!left.isEmpty()){
-        // 남은 수량은 다시 addItem 시도하지 않고 한 번만 드랍하여 타 플러그인(보관함) 중복 트리거 방지
-        for(ItemStack rem : left.values()){
-          target.getWorld().dropItemNaturally(target.getLocation(), rem);
-        }
+        for(ItemStack rest: left.values()) com.minkang.ultimate.random.RewardGiver.giveClean(target, rest);
       }
-
       target.sendMessage(plugin.msg("pkg_received_key").replace("%name%", name).replace("%count%", String.valueOf(count)));
       sender.sendMessage(plugin.msg("pkg_given_to_player").replace("%player%", target.getName()).replace("%name%", name).replace("%count%", String.valueOf(count)));
       return true;
