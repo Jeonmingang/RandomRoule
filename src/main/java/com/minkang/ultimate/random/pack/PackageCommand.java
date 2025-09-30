@@ -128,10 +128,15 @@ public class PackageCommand implements CommandExecutor, TabCompleter {
       else if(sender instanceof Player){ target=(Player)sender; }
       if(target==null){ sender.sendMessage(plugin.msg("player_not_found").replace("%player%", (a.length>=3?a[2]:"(콘솔)"))); return true; }
       ItemStack give=key.clone(); give.setAmount(count);
+      
       java.util.Map<Integer, ItemStack> left = com.minkang.ultimate.random.RewardGiver.giveClean(target, give);
       if(!left.isEmpty()){
-        for(ItemStack rest: left.values()) com.minkang.ultimate.random.RewardGiver.giveClean(target, rest);
+        // 남은 수량은 다시 addItem 시도하지 않고 한 번만 드랍하여 타 플러그인(보관함) 중복 트리거 방지
+        for(ItemStack rem : left.values()){
+          target.getWorld().dropItemNaturally(target.getLocation(), rem);
+        }
       }
+
       target.sendMessage(plugin.msg("pkg_received_key").replace("%name%", name).replace("%count%", String.valueOf(count)));
       sender.sendMessage(plugin.msg("pkg_given_to_player").replace("%player%", target.getName()).replace("%name%", name).replace("%count%", String.valueOf(count)));
       return true;
