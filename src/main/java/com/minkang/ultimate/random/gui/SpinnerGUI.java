@@ -117,6 +117,9 @@ double chance=100.0*re.getWeight()/Math.max(1,totalWeight);
       void giveReward(){
         if(done[0]) return;
         done[0] = true;
+        Integer _ui = p.getPersistentDataContainer().get(new org.bukkit.NamespacedKey(plugin, "spin-ui"), org.bukkit.persistence.PersistentDataType.INTEGER);
+        if(_ui!=null && _ui==1) return;
+        p.getPersistentDataContainer().set(new org.bukkit.NamespacedKey(plugin, "spin-ui"), org.bukkit.persistence.PersistentDataType.INTEGER, 1);
         Integer _sd = p.getPersistentDataContainer().get(new org.bukkit.NamespacedKey(plugin, "spin-done"), org.bukkit.persistence.PersistentDataType.INTEGER);
         if(_sd!=null && _sd==1) return;
         p.getPersistentDataContainer().set(new org.bukkit.NamespacedKey(plugin, "spin-done"), org.bukkit.persistence.PersistentDataType.INTEGER, 1);
