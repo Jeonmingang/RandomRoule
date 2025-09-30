@@ -1,0 +1,54 @@
+messages:
+  use-prefix: true
+  prefix: "&b[룰렛]&r "
+  already_spinning: "&c이미 진행 중인 뽑기가 있습니다. 잠시만 기다려주세요."
+  created: "&a룰렛 &e%key%&a 가 생성되었습니다."
+  exists: "&c이미 존재하는 키입니다: &e%key%"
+  deleted: "&a룰렛 &e%key%&a 를 삭제했습니다."
+  not_found: "&c해당 키의 룰렛이 없습니다: &e%key%"
+  set_item_bind: "&a현재 손에 든 아이템을 &e%key%&a 룰렛 열쇠로 지정했습니다. (우클릭 시 뽑기)"
+  need_item_in_hand: "&c손에 든 아이템이 없습니다."
+  open_settings: "&a설정 GUI를 열었습니다: &e%key%"
+  draw_start: "&a뽑기를 시작합니다!"
+  no_items: "&c등록된 아이템이 없습니다."
+  player_not_found: "&c플레이어를 찾을 수 없습니다: %player%"
+  pkg_not_found: "&c해당 이름의 패키지가 없습니다: &e%name%"
+  pkg_give_no_item: "&c패키지 &e%name%&c 에 지급키(트리거 아이템)가 설정되어 있지 않습니다. 먼저 아이템을 지정하세요."
+  pkg_received_key: "&a패키지 &e%name%&a 키 x&ex%count%&a 를 받았습니다."
+  pkg_given_to_player: "&a%player%&a 에게 패키지 &e%name%&a 키 x&ex%count%&a 지급 완료."
+
+titles:
+  spinner: "룰렛 뽑기: %key%"
+  preview: "룰렛 미리보기: %key%"
+  settings: "룰렛 설정: %key%"
+
+spinner:
+  show-chance-only: true
+  center-glow: true
+  chance-format: "&7확률: &e%chance%%%"
+  weight-format: "&7가중치: &e%weight%"
+  base-cycles-per-size: 2
+
+
+# --- Added messages & defaults ---
+messages:
+  give_invalid_amount: "&c올바른 갯수를 입력하세요."
+  give_need_trigger: "&c%key% 의 지급키(트리거 아이템)가 지정되어 있지 않습니다. /랜덤 아이템 %key% 로 먼저 지정하세요."
+  give_success: "&a%player% 에게 &e%key%&a 키 x&ex%amount%&a 지급 완료."
+  give_self_success: "&a%key%&a 키 x&ex%amount%&a 를 받았습니다."
+  setting_hint_1: "&7좌클릭: 아이템 교체, &7우클릭: 가중치 변경지정"
+  setting_hint_2: "&7인벤 닫으면 저장됩니다. [쉬프트+좌클릭: 아이템 삭제]"
+  draw_win: "&a축하합니다! 아이템: &f%item%"
+randomkey:
+  key-header: "&6&l[ 뽑기 ] &e%key%"
+  key-subtitle: "&8━ &7뽑기 구성 (확률)"
+  key-entry: "&7- &f%item% &7(&e%chance%%%&7)"
+  key-footer: "&8우클릭 시 뽑기 GUI"
+spinner:
+  use-pointer-panes: true
+  glass: "GRAY_STAINED_GLASS_PANE"
+  glass-name: "&7"
+  pointer-name: "&6▲ 중앙 슬롯 ▼"
+  ticks-per-step-start: 1
+  min-base-cycles: 12
+  extra-steps-random: 15
