@@ -9,6 +9,13 @@ import org.bukkit.enchantments.Enchantment;
 import com.minkang.ultimate.random.LoreSanitizer;
 import com.minkang.ultimate.random.GrantService;
 public class SpinnerGUI {
+    private java.util.List<String> filterLore(java.util.List<String> lore){
+        if(lore==null) return null;
+        java.util.List<String> out = new java.util.ArrayList<>();
+        for(String s: lore){ String t = org.bukkit.ChatColor.stripColor(s); if(t==null) t=s; if(t.contains("가중치") || t.toLowerCase().contains("weight")) continue; out.add(s);} 
+        return out;
+    }
+
 
   private static org.bukkit.inventory.ItemStack sanitized(org.bukkit.inventory.ItemStack src){
     if(src==null) return null;
@@ -17,6 +24,9 @@ public class SpinnerGUI {
 
   public static void start(final Main plugin, final Player p, final Roulette r){
     if(!plugin.tryBeginSpin(p)){ p.sendMessage(plugin.msg("already_spinning")); p.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1f, 0.7f); return; }
+    // reset per-spin flags so the new spin can award & render exactly once
+    p.getPersistentDataContainer().set(new org.bukkit.NamespacedKey(plugin, "spin-done"), org.bukkit.persistence.PersistentDataType.INTEGER, 0);
+    p.getPersistentDataContainer().set(new org.bukkit.NamespacedKey(plugin, "spin-ui"), org.bukkit.persistence.PersistentDataType.INTEGER, 0);
 
     final String title=plugin.getConfig().getString("titles.spinner","룰렛 뽑기: %key%").replace("%key%", r.getKey());
     final boolean[] done = {false};
