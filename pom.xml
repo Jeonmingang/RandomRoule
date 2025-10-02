@@ -42,6 +42,6 @@
         </configuration>
       </plugin>
     </plugins>
-    <finalName>UltimateRoulette-1.4.4</finalName>
+    <finalName>UltimateRoulette-1.0.0</finalName>
   </build>
 </project>
