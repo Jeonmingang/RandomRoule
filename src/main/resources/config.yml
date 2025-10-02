@@ -1,8 +1,0 @@
-level:
-  base-xp: 1000
-  per-level: 500
-  growth: 1.0
-  max-level: 1000
-  notify-on-levelup: true
-  messages:
-    level-up: "&a섬 레벨이 &e<level>&a 레벨이 되었습니다!"
