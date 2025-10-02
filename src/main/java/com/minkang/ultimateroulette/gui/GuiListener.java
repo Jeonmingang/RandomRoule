@@ -11,6 +11,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -91,7 +93,7 @@ public class GuiListener implements Listener {
         }
         if (raw == EditGUI.NEXT_SLOT) {
             int maxIdx = def.getRewards().size();
-            boolean hasNext = maxIdx > (page+1)*EditGUI.SLOTS_PER_PAGE;
+            boolean hasNext = def.getRewards().size() > (page+1) * EditGUI.SLOTS_PER_PAGE;
             if (hasNext && click.isLeftClick()) new EditGUI(plugin, def, page+1).open(p);
             return;
         }
@@ -99,7 +101,7 @@ public class GuiListener implements Listener {
             // 좌: 이전, 우: 다음
             int maxIdx = def.getRewards().size();
             boolean hasPrev = page > 0;
-            boolean hasNext = maxIdx > (page+1)*EditGUI.SLOTS_PER_PAGE;
+            boolean hasNext = def.getRewards().size() > (page+1) * EditGUI.SLOTS_PER_PAGE;
             if (click.isLeftClick() && hasPrev) new EditGUI(plugin, def, page-1).open(p);
             else if (click.isRightClick() && hasNext) new EditGUI(plugin, def, page+1).open(p);
             return;
@@ -148,5 +150,29 @@ public class GuiListener implements Listener {
     }
 
     @EventHandler
-    public void onClose(InventoryCloseEvent e) { /* no-op */ }
+    public void onClose(InventoryCloseEvent e) { /* no-op */ 
+@EventHandler
+public void onDrag(InventoryDragEvent e) {
+    if (!(e.getWhoClicked() instanceof Player)) return;
+    Player p = (Player)e.getWhoClicked();
+    String title = e.getView().getTitle();
+    if (!isEdit(title)) return;
+    e.setCancelled(true); // 편집 GUI에서는 실제 이동 취소 (설정만 반영)
+
+    String key = title.substring(title.indexOf("설정: ") + 4).split(" ")[0].trim();
+    KeyDef def = plugin.keys().get(key);
+    if (def == null) return;
+
+    // 커서 아이템을 보상으로 추가 (소모하지 않음)
+    ItemStack cursor = e.getOldCursor();
+    if (cursor == null || cursor.getType() == Material.AIR) return;
+
+    Reward r = new Reward(cursor.clone(), 1);
+    def.getRewards().add(r);
+    plugin.keys().save();
+
+    int page = currentPageFromTitle(title);
+    new EditGUI(plugin, def, page).open(p);
+}
+
 }
