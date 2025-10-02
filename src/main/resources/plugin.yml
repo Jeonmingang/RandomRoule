@@ -1,7 +1,7 @@
 name: UltimateRandomRoulette
 load: POSTWORLD
 main: com.minkang.ultimate.random.Main
-version: 1.3.3
+version: 1.4.3
 softdepend: [ItemEnchant, PlaceholderAPI, Citizens]
 api-version: 1.16
 author: MingangJeon+GPT
