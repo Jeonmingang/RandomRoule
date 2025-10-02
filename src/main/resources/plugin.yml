@@ -1,0 +1,30 @@
+
+
+name: SamSkyBridge
+main: com.signition.samskybridge.Main
+version: 1.1.6
+api-version: 1.16
+author: signition
+commands:
+  섬:
+    description: 섬 관련 명령어
+    usage: |
+      /섬
+      /섬 매물
+      /섬 매물 등록 <가격>
+      /섬 관리 승급 <닉>
+      /섬 관리 강등 <닉>
+      /섬 레벨
+      /섬 랭킹
+      /섬 업그레이드
+      /섬 채팅
+      /섬 초대 <닉>
+      /섬 강퇴 <닉>
+      /섬 설정 <리로드|보기||저장>
+    aliases: [sky]
+permissions:
+  samsky.use:
+    default: true
+  samsky.admin:
+    default: op
+softdepend: [Vault]
