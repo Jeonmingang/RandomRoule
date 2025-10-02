@@ -2,7 +2,7 @@ name: UltimateRoulette
 main: com.minkang.ultimateroulette.UltimateRoulette
 version: 1.4.4
 api-version: 1.16
-author: minkang+gpt
+author: minkang
 commands:
   roulette:
     description: Roulette system
