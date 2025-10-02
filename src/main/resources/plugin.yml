@@ -1,6 +1,6 @@
 name: UltimateRoulette
 main: com.minkang.ultimateroulette.UltimateRoulette
-version: 1.3.3-hotfix4
+version: 1.5.0
 api-version: 1.16
 author: minkang+gpt
 commands:
