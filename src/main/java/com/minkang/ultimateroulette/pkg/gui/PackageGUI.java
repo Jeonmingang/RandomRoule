@@ -27,7 +27,7 @@ public class PackageGUI {
         int i=0;
         for (ItemStack it : def.getItems()) {
             if (i>=45) break;
-            inv.setItem(i++, it);
+            Text.sanitize(it); inv.setItem(i++, it);
         }
         // 수령 버튼
         ItemStack take = new ItemStack(Material.LIME_WOOL);

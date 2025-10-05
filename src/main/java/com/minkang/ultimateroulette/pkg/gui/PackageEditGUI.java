@@ -45,7 +45,7 @@ public class PackageEditGUI {
             lore.add(Text.color("&cQ(드롭): 제거"));
             m.setLore(lore);
             copy.setItemMeta(m);
-            inv.setItem(idx++, copy);
+            Text.sanitize(copy); inv.setItem(idx++, copy);
             if (idx >= 45) break;
         }
         // add buttons

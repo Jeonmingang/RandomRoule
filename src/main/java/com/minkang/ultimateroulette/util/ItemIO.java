@@ -26,7 +26,9 @@ public class ItemIO {
             BukkitObjectInputStream ois = new BukkitObjectInputStream(new ByteArrayInputStream(bytes));
             Object obj = ois.readObject();
             ois.close();
-            return (ItemStack) obj;
+            org.bukkit.inventory.ItemStack it = (org.bukkit.inventory.ItemStack) obj;
+            com.minkang.ultimateroulette.util.Text.sanitize(it);
+            return it;
         } catch (Exception e) {
             throw new IllegalStateException("Failed to deserialize item: " + e.getMessage(), e);
         }
