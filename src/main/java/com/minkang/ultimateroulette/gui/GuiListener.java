@@ -162,4 +162,46 @@ public class GuiListener implements Listener {
     public void onClose(InventoryCloseEvent e) {
         // no-op
     }
+
+    // ==== Preview GUI protections / actions ====
+    private boolean isPreviewTitle(String title) {
+        if (title == null) return false;
+        String plain = org.bukkit.ChatColor.stripColor(title);
+        return plain != null && plain.startsWith("미리보기: ");
+    }
+    private String keyNameFromPreview(String title) {
+        String plain = org.bukkit.ChatColor.stripColor(title);
+        return plain.replaceFirst("^미리보기:\\s*", "");
+    }
+
+    @org.bukkit.event.EventHandler
+    public void onPreviewClick(org.bukkit.event.inventory.InventoryClickEvent e) {
+        if (!(e.getWhoClicked() instanceof org.bukkit.entity.Player)) return;
+        String title = e.getView().getTitle();
+        if (!isPreviewTitle(title)) return;
+
+        // Block all interactions by default
+        e.setCancelled(true);
+
+        // Only allow clicking the green 'Start' button at slot 49
+        if (e.getRawSlot() != 49) return;
+
+        org.bukkit.entity.Player p = (org.bukkit.entity.Player) e.getWhoClicked();
+        String key = keyNameFromPreview(title);
+        com.minkang.ultimateroulette.data.KeyDef def = plugin.keys().get(key);
+        if (def == null) {
+            p.sendMessage(com.minkang.ultimateroulette.util.Text.color("&c해당 키 구성이 없어 뽑기를 시작할 수 없습니다: &f" + key));
+            return;
+        }
+        p.closeInventory();
+        new com.minkang.ultimateroulette.gui.SpinGUI(plugin, def).open(p);
+    }
+
+    @org.bukkit.event.EventHandler
+    public void onPreviewDrag(org.bukkit.event.inventory.InventoryDragEvent e) {
+        if (isPreviewTitle(e.getView().getTitle())) {
+            e.setCancelled(true);
+        }
+    }
+
 }
