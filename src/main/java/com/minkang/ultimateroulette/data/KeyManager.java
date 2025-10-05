@@ -145,7 +145,7 @@ out.setItemMeta(meta);
 return out;
 }
 
-    \1    keyVersion.put(name, getKeyVersion(name) + 1);
+        keyVersion.put(name, getKeyVersion(name) + 1);
 KeyDef def = get(key);
         if (def == null) return;
         // Ensure tag is set
