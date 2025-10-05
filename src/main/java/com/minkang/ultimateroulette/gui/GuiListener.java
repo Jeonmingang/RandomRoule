@@ -26,7 +26,12 @@ public class GuiListener implements Listener {
         String plain = ChatColor.stripColor(title);
         return plain != null && plain.startsWith("설정:");
     }
-    private boolean isSpin(String title) {
+    private boolean isPreview(String title) {
+    if (title == null) return false;
+    String plain = ChatColor.stripColor(title);
+    return plain != null && plain.startsWith("미리보기:");
+}
+private boolean isSpin(String title) {
         if (title == null) return false;
         String plain = ChatColor.stripColor(title);
         return plain != null && plain.startsWith("룰렛 스핀:");
@@ -138,6 +143,38 @@ public class GuiListener implements Listener {
     }
 
     // ---------- Spin GUI: 모든 조작 차단 ----------
+    
+
+@EventHandler
+public void onPreviewClick(InventoryClickEvent e) {
+    if (!(e.getWhoClicked() instanceof Player)) return;
+    Player p = (Player)e.getWhoClicked();
+    String title = e.getView().getTitle();
+    if (!isPreview(title)) return;
+    e.setCancelled(true);
+
+    // Start button (slot 49) with name contains '뽑기'
+    if (e.getRawSlot() == 49) {
+        // Resolve KeyDef from title
+        String plain = ChatColor.stripColor(title);
+        String key = null;
+        try {
+            int idx = plain.indexOf("미리보기:") + 5;
+            key = plain.substring(idx).trim();
+        } catch (Exception ignored) {}
+        KeyDef def = (key != null ? plugin.keys().get(key) : null);
+        if (def == null) {
+            p.sendMessage(Text.color("&c키 정보를 찾을 수 없습니다."));
+            return;
+        }
+        if (!consumeKey(p, def)) {
+            p.sendMessage(Text.color("&c전용 아이템이 부족합니다."));
+            return;
+        }
+        new SpinGUI(plugin, def).open(p);
+    }
+}
+
     @EventHandler
     public void onSpinClick(org.bukkit.event.inventory.InventoryClickEvent e) {
         String title = e.getView().getTitle();
@@ -148,4 +185,33 @@ public class GuiListener implements Listener {
         String title = e.getView().getTitle();
         if (isSpin(title)) e.setCancelled(true);
     }
+
+
+private boolean consumeKey(Player p, KeyDef def) {
+    // Try main hand first
+    ItemStack hand = p.getInventory().getItemInMainHand();
+    if (isKeyItem(hand, def)) {
+        int amt = hand.getAmount();
+        if (amt <= 1) p.getInventory().setItemInMainHand(null);
+        else hand.setAmount(amt - 1);
+        return true;
+    }
+    // Search inventory
+    for (int i=0;i<p.getInventory().getSize();i++) {
+        ItemStack it = p.getInventory().getItem(i);
+        if (isKeyItem(it, def)) {
+            int amt = it.getAmount();
+            if (amt <= 1) p.getInventory().setItem(i, null);
+            else it.setAmount(amt - 1);
+            return true;
+        }
+    }
+    return false;
+}
+private boolean isKeyItem(ItemStack it, KeyDef def) {
+    if (it == null || it.getType() == Material.AIR || !it.hasItemMeta()) return false;
+    org.bukkit.persistence.PersistentDataContainer pdc = it.getItemMeta().getPersistentDataContainer();
+    String tag = pdc.getOrDefault(plugin.keyTag(), org.bukkit.persistence.PersistentDataType.STRING, null);
+    return tag != null && tag.equals(def.getName());
+}
 }
