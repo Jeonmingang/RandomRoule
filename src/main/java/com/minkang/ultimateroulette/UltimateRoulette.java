@@ -49,6 +49,8 @@ public class UltimateRoulette extends JavaPlugin {
             getCommand("package").setExecutor(pc);
 }
         getServer().getPluginManager().registerEvents(new GuiListener(this), this);
+        getServer().getPluginManager().registerEvents(new com.minkang.ultimateroulette.gui.KeyUseListener(this), this);
+
 int saveTicks = getConfig().getInt("storage.save_interval_ticks", 600);
         autosaveTask = getServer().getScheduler().runTaskTimerAsynchronously(this, () -> {
             try {

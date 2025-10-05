@@ -36,6 +36,28 @@ public class RouletteCommand implements CommandExecutor {
 
         String sub = args[0].toLowerCase(Locale.ROOT);
         switch (sub) {
+            case "아이템":
+            case "item":
+                if (p == null) { sender.sendMessage(Text.color("&c플레이어만 사용 가능합니다.")); return true; }
+                if (!p.hasPermission("ultimateroulette.admin")) { sender.sendMessage(Text.color("&c권한이 없습니다.")); return true; }
+                if (args.length < 2) { sender.sendMessage(Text.color("&e사용법: /" + label + " 아이템 <키>")); return true; }
+                org.bukkit.inventory.ItemStack hand = p.getInventory().getItemInMainHand();
+                if (hand == null || hand.getType() == org.bukkit.Material.AIR) {
+                    sender.sendMessage(Text.color("&c손에 아이템을 들고 사용하세요.")); return true;
+                }
+                KeyDef def = km.get(args[1]);
+                if (def == null) { sender.sendMessage(Text.color("&c존재하지 않는 키: &f" + args[1])); return true; }
+                // write PDC + lore onto the held item and persist
+                km.setKeyItem(args[1], hand);
+                // ensure player's item becomes the tagged version immediately
+                org.bukkit.inventory.ItemStack replaced = def.getKeyItem();
+                if (replaced != null) {
+                    p.getInventory().setItemInMainHand(replaced.clone());
+                    p.updateInventory();
+                }
+                sender.sendMessage(Text.color("&a전용 아이템 설정 완료: &f" + args[1] + " &7(우클릭으로 미리보기/스핀)"));
+                return true;
+
             case "생성": // create key
             case "create":
                 if (!p.hasPermission("ultimateroulette.admin")) {
