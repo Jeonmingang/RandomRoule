@@ -3,6 +3,7 @@ package com.minkang.ultimateroulette.gui;
 import com.minkang.ultimateroulette.UltimateRoulette;
 import com.minkang.ultimateroulette.data.KeyDef;
 import com.minkang.ultimateroulette.data.Reward;
+import com.minkang.ultimateroulette.gui.ClaimGUI;
 import com.minkang.ultimateroulette.util.Text;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -175,7 +176,23 @@ public void onPreviewClick(InventoryClickEvent e) {
     }
 }
 
-    @EventHandler
+    
+
+@EventHandler
+public void onClaimClick(InventoryClickEvent e) {
+    if (!(e.getWhoClicked() instanceof org.bukkit.entity.Player)) return;
+    org.bukkit.entity.Player p = (org.bukkit.entity.Player)e.getWhoClicked();
+    if (!ClaimGUI.isClaimTitle(e.getView().getTitle())) return;
+    e.setCancelled(true);
+    ClaimGUI.handleClick(plugin, p, e);
+}
+
+@EventHandler
+public void onClaimDrag(InventoryDragEvent e) {
+    if (!ClaimGUI.isClaimTitle(e.getView().getTitle())) return;
+    e.setCancelled(true);
+}
+@EventHandler
     public void onSpinClick(org.bukkit.event.inventory.InventoryClickEvent e) {
         String title = e.getView().getTitle();
         if (isSpin(title)) e.setCancelled(true);

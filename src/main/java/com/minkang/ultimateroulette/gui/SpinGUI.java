@@ -46,7 +46,7 @@ public class SpinGUI {
     public void open(Player p) {
         inv = Bukkit.createInventory(null, 27, title());
         // Markers
-        ItemStack mark = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+        ItemStack mark = new ItemStack(Material.HOPPER);
         ItemMeta mm = mark.getItemMeta();
         if (mm != null) {
             mm.setDisplayName(Text.color("&7▼"));

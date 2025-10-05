@@ -11,86 +11,120 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.HashMap;
 
 public class ClaimGUI {
-    private static UltimateRoulette plugin;
-    private static UUID owner;
-    private static int page = 0;
+    private final UltimateRoulette plugin;
+    private final UUID owner;
+    public static final int SLOTS_PER_PAGE = 45; // 0..44
+    public static final int PREV_SLOT = 45;
+    public static final int ALL_SLOT  = 49;
+    public static final int NEXT_SLOT = 53;
 
     public ClaimGUI(UltimateRoulette plugin, UUID owner) {
-        ClaimGUI.plugin = plugin;
-        ClaimGUI.owner = owner;
+        this.plugin = plugin;
+        this.owner = owner;
     }
 
-    public void open(Player p) { page = 0; openPage(p, 0);} 
-    private void openPage(Player p, int pg) {
-        String title = plugin.getConfig().getString("titles.claim", "&b&l보관함 (클레임)");
-        String ptag = pg>0?(" &7(p" + (pg+1) + ")"):"";
-        Inventory inv = Bukkit.createInventory(null, 54, Text.color(title + ptag));
-        List<ItemStack> items = plugin.storage().getClaimList(owner);
-        int idx = 0;
-        int start = pg*45;
-        for (int i=start; i<items.size() && idx<45; i++) {
-            ItemStack it = items.get(i);
-            inv.setItem(idx++, it);
-            if (idx >= 45) break;
+    public static boolean isClaimTitle(String title) {
+        if (title == null) return false;
+        String t = org.bukkit.ChatColor.stripColor(title);
+        return t != null && t.startsWith("보관함");
+    }
+
+    private String title(int page, int maxPage) {
+        return Text.color("&b보관함 &7(클레임) &8(p" + (page+1) + "/" + Math.max(1,maxPage) + ")");
+    }
+
+    public void open(Player p) { openPage(p, 0); }
+
+    public void openPage(Player p, int page) {
+        List<ItemStack> items = new ArrayList<>(plugin.storage().getClaimList(owner));
+        int maxPage = (int)Math.ceil(items.size() / (double)SLOTS_PER_PAGE);
+        if (maxPage <= 0) maxPage = 1;
+        if (page < 0) page = 0;
+        if (page >= maxPage) page = maxPage - 1;
+
+        Inventory inv = Bukkit.createInventory(p, 54, title(page, maxPage));
+
+        // Fill page items
+        int start = page * SLOTS_PER_PAGE;
+        for (int i=0;i<SLOTS_PER_PAGE;i++) {
+            int idx = start + i;
+            if (idx >= items.size()) break;
+            inv.setItem(i, items.get(idx).clone());
         }
-        org.bukkit.inventory.ItemStack prev = new org.bukkit.inventory.ItemStack(Material.ARROW);
-        org.bukkit.inventory.meta.ItemMeta pm = prev.getItemMeta(); pm.setDisplayName(Text.color("&7이전 페이지")); prev.setItemMeta(pm);
-        org.bukkit.inventory.ItemStack next = new org.bukkit.inventory.ItemStack(Material.ARROW);
-        org.bukkit.inventory.meta.ItemMeta nm = next.getItemMeta(); nm.setDisplayName(Text.color("&7다음 페이지")); next.setItemMeta(nm);
-        inv.setItem(45, prev); inv.setItem(53, next);
-        // take all button
+
+        // Nav & All buttons
+        ItemStack prev = new ItemStack(Material.ARROW);
+        ItemMeta pm = prev.getItemMeta();
+        if (pm != null) { pm.setDisplayName(Text.color("&7◀ 이전 페이지")); prev.setItemMeta(pm); }
         ItemStack all = new ItemStack(Material.CHEST);
         ItemMeta am = all.getItemMeta();
-        am.setDisplayName(Text.color("&a&l모두 받기"));
-        all.setItemMeta(am);
-        inv.setItem(49, all);
+        if (am != null) { am.setDisplayName(Text.color("&a모두 받기")); all.setItemMeta(am); }
+        ItemStack next = new ItemStack(Material.ARROW);
+        ItemMeta nm = next.getItemMeta();
+        if (nm != null) { nm.setDisplayName(Text.color("&7다음 페이지 ▶")); next.setItemMeta(nm); }
+
+        inv.setItem(PREV_SLOT, prev);
+        inv.setItem(ALL_SLOT, all);
+        inv.setItem(NEXT_SLOT, next);
+
         p.openInventory(inv);
     }
 
-    public static void handleClick(Player p, InventoryClickEvent e) {
-        if (!e.getView().getTitle().contains("보관함")) return;
-        e.setCancelled(true);
-        int slot = e.getSlot();
-        if (slot >=0 && slot < 45 && e.getCurrentItem()!=null && e.getCurrentItem().getType()!=Material.AIR) {
-            java.util.List<org.bukkit.inventory.ItemStack> items = plugin.storage().getClaimList(owner);
-            int current = 0; String t = e.getView().getTitle(); if (t.contains("(p")) { try { current = Math.max(0, Integer.parseInt(t.substring(t.indexOf("(p")+2, t.indexOf(")"))) -1);} catch (Exception ignore) {} }
-            int absoluteIndex = current*45 + slot;
-            if (absoluteIndex < items.size()) {
-                org.bukkit.inventory.ItemStack it = items.remove(absoluteIndex);
-                java.util.HashMap<Integer, org.bukkit.inventory.ItemStack> left = p.getInventory().addItem(it);
-                left.values().forEach(rem -> p.getWorld().dropItemNaturally(p.getLocation(), rem));
-                plugin.storage().setClaimList(owner, items);
-                try { org.bukkit.Sound s = org.bukkit.Sound.valueOf(plugin.getConfig().getString("sounds.claim","ENTITY_ITEM_PICKUP")); p.playSound(p.getLocation(), s, 1f, 1f);} catch (Exception ex) { p.playSound(p.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1f, 1f);} 
-                new ClaimGUI(plugin, owner).openPage(p, current);
-            }
-            return;
+    public static void handleClick(UltimateRoulette plugin, Player p, InventoryClickEvent e) {
+        if (!isClaimTitle(e.getView().getTitle())) return;
+        e.setCancelled(true); // 보관함에서 꺼내기 금지
+
+        String title = org.bukkit.ChatColor.stripColor(e.getView().getTitle());
+        int page = 0;
+        int pIdx = title.lastIndexOf("(p");
+        if (pIdx >= 0) {
+            try { 
+                int slash = title.indexOf('/', pIdx);
+                int end = title.indexOf(')', pIdx);
+                page = Integer.parseInt(title.substring(pIdx+2, slash)) - 1;
+            } catch (Exception ignored) {}
         }
-        if (e.getCurrentItem() != null && e.getCurrentItem().getType() == Material.ARROW && e.getCurrentItem().hasItemMeta()) {
-            boolean next = e.getCurrentItem().getItemMeta().getDisplayName().contains("다음");
-            int current = 0;
-            String t = e.getView().getTitle();
-            if (t.contains("(p")) { try { current = Math.max(0, Integer.parseInt(t.substring(t.indexOf("(p")+2, t.indexOf(")"))) -1);} catch (Exception ignore) {} }
-            int newPage = next ? current+1 : Math.max(0, current-1);
-            new ClaimGUI(plugin, owner).openPage(p, newPage);
-            return;
-        }
-        if (slot == 49) {
-            // give as many as fits
-            List<ItemStack> items = plugin.storage().getClaimList(owner);
+
+        if (e.getRawSlot() == ALL_SLOT) {
+            List<ItemStack> items = new ArrayList<>(plugin.storage().getClaimList(p.getUniqueId()));
             for (ItemStack it : items) {
-                HashMap<Integer, ItemStack> left = p.getInventory().addItem(it);
-                // drop leftovers at player location
+                java.util.HashMap<Integer, ItemStack> left = p.getInventory().addItem(it);
                 left.values().forEach(rem -> p.getWorld().dropItemNaturally(p.getLocation(), rem));
             }
-            plugin.storage().setClaimList(owner, new java.util.ArrayList<>());
+            plugin.storage().setClaimList(p.getUniqueId(), new ArrayList<>());
             p.sendMessage(Text.color("&a보관함의 아이템을 모두 수령했습니다."));
             p.playSound(p.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1f, 1f);
-            p.closeInventory();
+            new ClaimGUI(plugin, p.getUniqueId()).openPage(p, page); // refresh (will be empty)
+            return;
+        }
+
+        // Single item claim if clicked on top grid
+        if (e.getRawSlot() >= 0 && e.getRawSlot() < SLOTS_PER_PAGE) {
+            int absolute = page * SLOTS_PER_PAGE + e.getRawSlot();
+            List<ItemStack> items = new ArrayList<>(plugin.storage().getClaimList(p.getUniqueId()));
+            if (absolute < items.size()) {
+                ItemStack it = items.remove(absolute);
+                java.util.HashMap<Integer, ItemStack> left = p.getInventory().addItem(it);
+                left.values().forEach(rem -> p.getWorld().dropItemNaturally(p.getLocation(), rem));
+                plugin.storage().setClaimList(p.getUniqueId(), items);
+                p.playSound(p.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1f, 1f);
+                new ClaimGUI(plugin, p.getUniqueId()).openPage(p, page);
+            }
+        }
+
+        // Prev/Next
+        if (e.getRawSlot() == PREV_SLOT) {
+            new ClaimGUI(plugin, p.getUniqueId()).openPage(p, Math.max(0, page-1));
+        } else if (e.getRawSlot() == NEXT_SLOT) {
+            List<ItemStack> items = new ArrayList<>(plugin.storage().getClaimList(p.getUniqueId()));
+            int maxPage = (int)Math.ceil(items.size() / (double)SLOTS_PER_PAGE);
+            if (maxPage <= 0) maxPage = 1;
+            if (page + 1 < maxPage) new ClaimGUI(plugin, p.getUniqueId()).openPage(p, page+1);
         }
     }
 }
