@@ -19,6 +19,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 public class GuiListener implements Listener {
+    private boolean isSpinTitle(String title){ return org.bukkit.ChatColor.stripColor(title)!=null && org.bukkit.ChatColor.stripColor(title).startsWith("룰렛 스핀:"); }
 
     private final UltimateRoulette plugin;
     public GuiListener(UltimateRoulette plugin) {
@@ -203,5 +204,78 @@ public class GuiListener implements Listener {
             e.setCancelled(true);
         }
     }
+
+}
+
+
+@org.bukkit.event.EventHandler
+public void onSpinClick(org.bukkit.event.inventory.InventoryClickEvent e) {
+    if (isSpinTitle(e.getView().getTitle())) {
+        e.setCancelled(true);
+    }
+}
+@org.bukkit.event.EventHandler
+public void onSpinDrag(org.bukkit.event.inventory.InventoryDragEvent e) {
+    if (isSpinTitle(e.getView().getTitle())) {
+        e.setCancelled(true);
+    
+@org.bukkit.event.EventHandler
+public void onClick(org.bukkit.event.inventory.InventoryClickEvent e) {
+    if (!(e.getWhoClicked() instanceof org.bukkit.entity.Player)) return;
+    org.bukkit.entity.Player p = (org.bukkit.entity.Player)e.getWhoClicked();
+    String title = e.getView().getTitle();
+    if (!isEdit(title)) return;
+    e.setCancelled(true);
+    String key = keyFromTitle(title);
+    com.minkang.ultimateroulette.data.KeyDef def = plugin.keys().get(key);
+    if (def == null) return;
+    int page = currentPageFromTitle(title);
+    org.bukkit.inventory.Inventory top = e.getView().getTopInventory();
+    org.bukkit.inventory.Inventory bottom = e.getView().getBottomInventory();
+    int raw = e.getRawSlot();
+    boolean fromBottom = (e.getClickedInventory() != null && e.getClickedInventory().equals(bottom));
+
+    // bottom -> add
+    if (fromBottom) {
+        org.bukkit.inventory.ItemStack src = e.getCurrentItem();
+        if (src != null && src.getType() != org.bukkit.Material.AIR) {
+            def.getRewards().add(new com.minkang.ultimateroulette.data.Reward(src.clone(), 1));
+            plugin.keys().save();
+            new EditGUI(plugin, def, page).open(p);
+        }
+        return;
+    }
+
+    // page buttons
+    if (raw == EditGUI.PREV_SLOT) { if (page > 0) new EditGUI(plugin, def, page-1).open(p); return; }
+    if (raw == EditGUI.NEXT_SLOT) { boolean hasNext = def.getRewards().size() > (page+1)*EditGUI.SLOTS_PER_PAGE; if (hasNext) new EditGUI(plugin, def, page+1).open(p); return; }
+    if (raw == EditGUI.PAGE_SLOT) { return; }
+
+    // top 0..44: add from cursor if empty spot or adjust existing
+    if (raw >= 0 && raw < EditGUI.SLOTS_PER_PAGE) {
+        int idx = page * EditGUI.SLOTS_PER_PAGE + raw;
+        if (idx < def.getRewards().size() && e.getClick() != org.bukkit.event.inventory.ClickType.MIDDLE) {
+            com.minkang.ultimateroulette.data.Reward r = def.getRewards().get(idx);
+            switch (e.getClick()) {
+                case LEFT: r.setWeight(r.getWeight()+1); break;
+                case SHIFT_LEFT: r.setWeight(r.getWeight()+10); break;
+                case RIGHT: r.setWeight(Math.max(1, r.getWeight()-1)); break;
+                case SHIFT_RIGHT: r.setWeight(Math.max(1, r.getWeight()-10)); break;
+                case DROP: def.getRewards().remove(r); break;
+                default: break;
+            }
+            plugin.keys().save();
+            new EditGUI(plugin, def, page).open(p);
+            return;
+        }
+        org.bukkit.inventory.ItemStack cursor = e.getCursor();
+        if (cursor != null && cursor.getType() != org.bukkit.Material.AIR) {
+            def.getRewards().add(new com.minkang.ultimateroulette.data.Reward(cursor.clone(), 1));
+            plugin.keys().save();
+            new EditGUI(plugin, def, page).open(p);
+            return;
+        }
+    }
+}
 
 }

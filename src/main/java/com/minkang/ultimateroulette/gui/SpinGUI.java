@@ -5,6 +5,7 @@ import com.minkang.ultimateroulette.data.KeyDef;
 import com.minkang.ultimateroulette.data.Reward;
 import com.minkang.ultimateroulette.util.Text;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -14,93 +15,130 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Random;
 
 public class SpinGUI {
+    public static final int[] TRACK_SLOTS = {9,10,11,12,13,14,15,16,17};
+    public static final int TOP_CENTER = 4;
+    public static final int BOTTOM_CENTER = 22;
+
     private final UltimateRoulette plugin;
     private final KeyDef def;
-    private final int[] TRACK = {9,10,11,12,13,14,15,16,17};
+    private Inventory inv;
 
     public SpinGUI(UltimateRoulette plugin, KeyDef def) {
         this.plugin = plugin;
         this.def = def;
     }
 
-    private ItemStack markerPane(String name) {
-        ItemStack pane = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
-        ItemMeta m = pane.getItemMeta();
-        m.setDisplayName(Text.color("&7" + name));
-        pane.setItemMeta(m);
-        return pane;
+    public static boolean isSpinTitle(String title) {
+        if (title == null) return false;
+        String plain = ChatColor.stripColor(title);
+        return plain != null && plain.startsWith("룰렛 스핀:");
     }
 
-    /** Reel of rewards expanded by weight (Reward references, not items) */
-    private List<Reward> buildReelRewards(List<Reward> rewards) {
-        List<Reward> reel = new ArrayList<>();
-        for (Reward r : rewards) {
-            int w = Math.max(1, r.getWeight());
-            for (int i=0;i<w;i++) reel.add(r);
-        }
-        if (reel.isEmpty()) {
-            // fallback dummy
-            Reward dummy = new Reward(new ItemStack(Material.BARRIER), 1);
-            reel.add(dummy);
-        }
-        Collections.shuffle(reel);
-        return reel;
-    }
-
-    private ItemStack withProbLore(ItemStack base, double pct) {
-        ItemStack it = base.clone();
-        ItemMeta m = it.getItemMeta();
-        List<String> lore = (m != null && m.hasLore()) ? new ArrayList<>(m.getLore()) : new ArrayList<>();
-        lore.add(Text.color("&7확률: &b" + String.format(Locale.US, "%.2f", pct) + "%"));
-        if (m != null) {
-            m.setLore(lore);
-            it.setItemMeta(m);
-        }
-        return it;
+    private String title() {
+        return Text.color("&6&l룰렛 스핀: &f" + def.getName());
     }
 
     public void open(Player p) {
-        Inventory inv = Bukkit.createInventory(null, 54, Text.color("&6&l룰렛 스핀!"));
-        inv.setItem(4, markerPane("▼"));
-        inv.setItem(22, markerPane("▼"));
+        inv = Bukkit.createInventory(null, 27, title());
+        // Markers
+        ItemStack mark = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+        ItemMeta mm = mark.getItemMeta();
+        if (mm != null) {
+            mm.setDisplayName(Text.color("&7▼"));
+            mark.setItemMeta(mm);
+        }
+        inv.setItem(TOP_CENTER, mark);
+        inv.setItem(BOTTOM_CENTER, mark);
+
+        // Fill others with glass to prevent pickup feel
+        ItemStack filler = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+        ItemMeta fm = filler.getItemMeta();
+        if (fm != null) {
+            fm.setDisplayName(Text.color("&8"));
+            filler.setItemMeta(fm);
+        }
+        for (int i=0;i<27;i++) {
+            if (i==TOP_CENTER || i==BOTTOM_CENTER) continue;
+            inv.setItem(i, filler);
+        }
+
         p.openInventory(inv);
+        startSpin(p);
+    }
 
+    private void startSpin(final Player p) {
+        // Build weighted reel
         List<Reward> rewards = def.getRewards();
-        int totalWeight = Math.max(1, rewards.stream().mapToInt(Reward::getWeight).sum());
-        final List<Reward> reel = buildReelRewards(rewards);
+        List<Reward> reel = new ArrayList<Reward>();
+        int totalW = 0;
+        for (Reward r : rewards) {
+            int w = Math.max(0, r.getWeight());
+            totalW += w;
+            for (int i=0;i<w;i++) reel.add(r);
+        }
+        if (reel.isEmpty()) {
+            // fallback
+            Reward dummy = new Reward(new ItemStack(Material.BARRIER), 1);
+            reel.add(dummy);
+            totalW = 1;
+        }
+        // Precompute display items with probability overlay (only for spin GUI, not final item)
+        List<ItemStack> reelItems = new ArrayList<ItemStack>(reel.size());
+        for (Reward r : reel) {
+            ItemStack base = (r.getItem()!=null ? r.getItem().clone() : new ItemStack(Material.CHEST));
+            ItemMeta m = base.getItemMeta();
+            if (m != null) {
+                List<String> lore = (m.hasLore() ? new ArrayList<String>(m.getLore()) : new ArrayList<String>());
+                double pct = totalW>0 ? (r.getWeight()*100.0/totalW) : 0.0;
+                lore.add(Text.color("&7확률: &b" + String.format(Locale.US, "%.2f", pct) + "%"));
+                m.setLore(lore);
+                base.setItemMeta(m);
+            }
+            reelItems.add(base);
+        }
 
-        final int[] idx = {0};
-        final int totalSteps = Math.max(40, 6 * TRACK.length); // 최소 회전 보장
+        final int size = reelItems.size();
+        final int[] idx = { new Random().nextInt(size) };
+        final int baseSteps = Math.max(40, size*3);
+        final int slowSteps = 40;
+        final int totalSteps = baseSteps + slowSteps;
+        final int[] step = {0};
+        final int[] interval = {1}; // shift every 'interval' ticks
+        final int[] tick = {0};
 
         new BukkitRunnable() {
-            int ticks = 0;
             @Override public void run() {
-                // markers
-                inv.setItem(4, markerPane("▼"));
-                inv.setItem(22, markerPane("▼"));
+                if (inv == null || !SpinGUI.isSpinTitle(inv.getTitle())) { cancel(); return; }
 
-                // fill track with probability overlay
-                for (int i=0;i<TRACK.length;i++) {
-                    Reward rr = reel.get((idx[0]+i) % reel.size());
-                    ItemStack showBase = (rr.getItem()!=null ? rr.getItem() : new ItemStack(Material.CHEST));
-                    double pct = rr.getWeight() * 100.0 / totalWeight;
-                    ItemStack show = withProbLore(showBase, pct); // 표시용만 확률 추가
-                    inv.setItem(TRACK[i], show);
+                // Deceleration: after baseSteps, gradually increase interval
+                if (step[0] > baseSteps) {
+                    if ((step[0]-baseSteps) % 8 == 0 && interval[0] < 5) interval[0]++;
                 }
-                idx[0]++; ticks++;
-                p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 1f, 1.5f);
 
-                if (ticks >= totalSteps) {
+                if (tick[0] % interval[0] == 0) {
+                    // shift window render
+                    for (int i=0;i<TRACK_SLOTS.length;i++) {
+                        int reelIndex = (idx[0] + i) % size;
+                        inv.setItem(TRACK_SLOTS[i], reelItems.get(reelIndex));
+                    }
+                    idx[0] = (idx[0] + 1) % size;
+                    p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 0.6f, 1.6f);
+                }
+                tick[0]++;
+                step[0]++;
+
+                if (step[0] >= totalSteps) {
                     this.cancel();
-                    // Determine winning reward = item currently at center index of reel
-                    Reward winR = reel.get((idx[0]-1 + 4) % reel.size()); // -(1) because idx advanced after render; +4 offset to center(13) in TRACK
-                    ItemStack prize = (winR.getItem()!=null ? winR.getItem().clone() : new ItemStack(Material.CHEST));
-                    plugin.storage().addClaim(p.getUniqueId(), prize); // 원본 메타 그대로 지급
+                    // Center item: TRACK_SLOTS[4] corresponds to reel index (idx -1 + 4)
+                    int centerReelIndex = ( (idx[0] - 1 + 4) % size + size ) % size;
+                    Reward win = reel.get(centerReelIndex);
+                    ItemStack prize = (win.getItem()!=null ? win.getItem().clone() : new ItemStack(org.bukkit.Material.CHEST));
+                    plugin.storage().addClaim(p.getUniqueId(), prize);
                     p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.2f);
                     p.sendMessage(Text.color("&a보상이 보관함에 지급되었습니다."));
                 }
