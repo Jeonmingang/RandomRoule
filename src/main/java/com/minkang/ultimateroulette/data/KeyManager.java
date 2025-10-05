@@ -154,18 +154,6 @@ public class KeyManager {
         return out;
     }
 
-for (String f : footer) lore.add(com.minkang.ultimateroulette.util.Text.color(f.replace("%KEY%", def.getName())));
-
-meta.setLore(lore);
-meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ATTRIBUTES);
-
-org.bukkit.inventory.ItemStack out = base.clone();
-org.bukkit.persistence.PersistentDataContainer pdc = meta.getPersistentDataContainer();
-pdc.set(plugin.keyTag(), org.bukkit.persistence.PersistentDataType.STRING, def.getName());
-out.setItemMeta(meta);
-return out;
-}
-    }
 
     public void setKeyItem(String key, org.bukkit.inventory.ItemStack hand) {
         keyVersion.put(key, getKeyVersion(key) + 1);
