@@ -113,7 +113,7 @@ public class SpinGUI {
 
         new BukkitRunnable() {
             @Override public void run() {
-                if (inv == null || !SpinGUI.isSpinTitle(inv.getTitle())) { cancel(); return; }
+                if (inv == null || !SpinGUI.isSpinTitle(p.getOpenInventory().getTitle())) { cancel(); return; }
 
                 // Deceleration: after baseSteps, gradually increase interval
                 if (step[0] > baseSteps) {
