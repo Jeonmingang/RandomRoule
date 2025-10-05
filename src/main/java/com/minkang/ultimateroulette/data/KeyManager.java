@@ -20,6 +20,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class KeyManager {
+    private final java.util.Map<String, Integer> keyVersion = new java.util.HashMap<>();
     private final UltimateRoulette plugin;
     private final Map<String, KeyDef> keys = new HashMap<>();
     private File file;
@@ -144,8 +145,8 @@ out.setItemMeta(meta);
 return out;
 }
 
-    public void setKeyItem(String key, ItemStack hand) {
-        KeyDef def = get(key);
+    \1    keyVersion.put(name, getKeyVersion(name) + 1);
+KeyDef def = get(key);
         if (def == null) return;
         // Ensure tag is set
         ItemStack withLore = buildKeyItemLore(hand, def);
