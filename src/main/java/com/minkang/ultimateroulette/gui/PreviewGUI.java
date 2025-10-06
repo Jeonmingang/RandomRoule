@@ -1,5 +1,7 @@
 package com.minkang.ultimateroulette.gui;
 
+import com.minkang.ultimateroulette.UltimateRoulette;
+
 import com.minkang.ultimateroulette.data.KeyDef;
 import com.minkang.ultimateroulette.data.Reward;
 import com.minkang.ultimateroulette.util.Text;
@@ -17,7 +19,13 @@ import java.util.Locale;
 public class PreviewGUI {
     private final KeyDef def;
 
-    public PreviewGUI(KeyDef def) { this.def = def; }
+    public PreviewGUI(KeyDef def) {
+
+/** Backward-compat: older callers passed (plugin, key). We ignore plugin and delegate. */
+public PreviewGUI(UltimateRoulette plugin, KeyDef key) {
+    this(key);
+}
+ this.def = def; }
 
     public void open(Player p) {
         Inventory inv = Bukkit.createInventory(null, 54, Text.color("&d&l미리보기: " + def.getName()));
