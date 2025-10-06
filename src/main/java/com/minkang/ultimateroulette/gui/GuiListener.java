@@ -231,29 +231,4 @@ private boolean isKeyItem(ItemStack it, KeyDef def) {
     String tag = pdc.getOrDefault(plugin.keyTag(), org.bukkit.persistence.PersistentDataType.STRING, null);
     return tag != null && tag.equals(def.getName());
 }
-
-@EventHandler
-public void onPreviewPage(InventoryClickEvent e) {
-    if (!(e.getWhoClicked() instanceof org.bukkit.entity.Player)) return;
-    org.bukkit.entity.Player p = (org.bukkit.entity.Player) e.getWhoClicked();
-    org.bukkit.inventory.Inventory inv = e.getInventory();
-    if (!(inv.getHolder() instanceof PreviewGUI.Holder)) return;
-    e.setCancelled(true);
-
-    PreviewGUI.Holder holder = (PreviewGUI.Holder) inv.getHolder();
-    String title = e.getView().getTitle();
-    // next / prev only (slot 49는 기존 핸들러가 처리)
-    int raw = e.getRawSlot();
-    com.minkang.ultimateroulette.data.KeyDef def = com.minkang.ultimateroulette.UltimateRoulette.getInstance().keys().get(holder.keyName);
-    if (def == null) return;
-    int total = Math.max(1, def.getRewards().size());
-    int pages = (int) Math.ceil(total / (double) PreviewGUI.SLOTS_PER_PAGE);
-    int page = holder.page;
-    if (raw == PreviewGUI.PREV_SLOT && page > 0) {
-        new PreviewGUI(com.minkang.ultimateroulette.UltimateRoulette.getInstance(), def, page-1).open(p);
-    } else if (raw == PreviewGUI.NEXT_SLOT && page+1 < pages) {
-        new PreviewGUI(com.minkang.ultimateroulette.UltimateRoulette.getInstance(), def, page+1).open(p);
-    }
-}
-
 }

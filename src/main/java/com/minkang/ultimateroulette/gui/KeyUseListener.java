@@ -35,7 +35,7 @@ public class KeyUseListener implements Listener {
             KeyDef def = plugin.keys().get(keyName);
             if (def != null) {
                 e.setCancelled(true);
-                new PreviewGUI(def).open((Player) e.getPlayer());
+                new PreviewGUI(plugin, def).open((Player) e.getPlayer());
             }
             return;
         }
