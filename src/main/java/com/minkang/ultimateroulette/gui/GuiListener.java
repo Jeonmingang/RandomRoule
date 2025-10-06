@@ -179,7 +179,7 @@ public void onPreviewClick(InventoryClickEvent e) {
         }
         return;
     }
-    if (e.getRawSlot() == 46) { // next
+    if (e.getRawSlot() == 53) { // next
         int total = Math.max(1, (int)Math.ceil(def.getRewards().size() / 45.0));
         if (page + 1 < total) {
             new PreviewGUI(def).open(p, page + 1);

@@ -22,7 +22,7 @@ public class PreviewGUI {
     public static final int GUI_SIZE = 54;
     public static final int CONTENT_SIZE = 45; // 0..44
     public static final int PREV_SLOT = 45;
-    public static final int NEXT_SLOT = 46;
+    public static final int NEXT_SLOT = 53;
     public static final int START_SLOT = 49;
 
     private final KeyDef def;
