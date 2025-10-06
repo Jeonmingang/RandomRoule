@@ -154,20 +154,41 @@ public void onPreviewClick(InventoryClickEvent e) {
     if (!isPreview(title)) return;
     e.setCancelled(true);
 
-    // Start button (slot 49) with name contains '뽑기'
-    if (e.getRawSlot() == 49) {
-        // Resolve KeyDef from title
-        String plain = ChatColor.stripColor(title);
-        String key = null;
-        try {
-            int idx = plain.indexOf("미리보기:") + 5;
-            key = plain.substring(idx).trim();
-        } catch (Exception ignored) {}
-        KeyDef def = (key != null ? plugin.keys().get(key) : null);
-        if (def == null) {
-            p.sendMessage(Text.color("&c키 정보를 찾을 수 없습니다."));
-            return;
+    // Resolve KeyDef and current page from title
+    String plain = ChatColor.stripColor(title);
+    String key = null;
+    try {
+        int s = plain.indexOf("미리보기:") + 5;
+        int eIdx = plain.indexOf(" (p");
+        if (s >= 0) {
+            if (eIdx > s) key = plain.substring(s, eIdx).trim();
+            else key = plain.substring(s).trim();
         }
+    } catch (Exception ignored) {}
+    KeyDef def = (key != null ? plugin.keys().get(key) : null);
+    if (def == null) {
+        p.sendMessage(Text.color("&c키 정보를 찾을 수 없습니다."));
+        return;
+    }
+    int page = currentPageFromTitle(title);
+
+    // Prev / Next
+    if (e.getRawSlot() == 45) { // prev
+        if (page > 0) {
+            new PreviewGUI(def).open(p, page - 1);
+        }
+        return;
+    }
+    if (e.getRawSlot() == 46) { // next
+        int total = Math.max(1, (int)Math.ceil(def.getRewards().size() / 45.0));
+        if (page + 1 < total) {
+            new PreviewGUI(def).open(p, page + 1);
+        }
+        return;
+    }
+
+    // Start button (slot 49)
+    if (e.getRawSlot() == 49) {
         if (!consumeKey(p, def)) {
             p.sendMessage(Text.color("&c전용 아이템이 부족합니다."));
             return;
@@ -175,8 +196,6 @@ public void onPreviewClick(InventoryClickEvent e) {
         new SpinGUI(plugin, def).open(p);
     }
 }
-
-    
 
 @EventHandler
 public void onClaimClick(InventoryClickEvent e) {

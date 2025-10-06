@@ -99,7 +99,7 @@ public class SpinGUI {
                 m.setLore(lore);
                 base.setItemMeta(m);
             }
-            Text.sanitize(base); reelItems.add(base);
+            reelItems.add(base);
         }
 
         final int size = reelItems.size();
@@ -124,7 +124,7 @@ public class SpinGUI {
                     // shift window render
                     for (int i=0;i<TRACK_SLOTS.length;i++) {
                         int reelIndex = (idx[0] + i) % size;
-                        ItemStack _reel = reelItems.get(reelIndex); Text.sanitize(_reel); inv.setItem(TRACK_SLOTS[i], _reel);
+                        inv.setItem(TRACK_SLOTS[i], reelItems.get(reelIndex));
                     }
                     idx[0] = (idx[0] + 1) % size;
                     p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 0.6f, 1.6f);
