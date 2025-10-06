@@ -76,7 +76,7 @@ public class EditGUI {
                 m.setLore(lore);
                 it.setItemMeta(m);
             }
-            inv.setItem(idx, it);
+            Text.sanitize(it); inv.setItem(idx, it);
         }
 
         boolean hasPrev = page > 0;

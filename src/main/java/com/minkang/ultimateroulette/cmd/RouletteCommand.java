@@ -107,7 +107,7 @@ public class RouletteCommand implements CommandExecutor {
                     if (is!=null && is.hasItemMeta() && is.getItemMeta().getPersistentDataContainer().has(plugin.keyTag(), org.bukkit.persistence.PersistentDataType.STRING)) {
                         String tag = is.getItemMeta().getPersistentDataContainer().get(plugin.keyTag(), org.bukkit.persistence.PersistentDataType.STRING);
                         if (tag!=null && tag.equalsIgnoreCase(d.getName())) {
-                            inv.setItem(i, plugin.keys().buildKeyItemLore(is, d));
+                            ItemStack _k = plugin.keys().buildKeyItemLore(is, d); Text.sanitize(_k); inv.setItem(i, _k);
                         }
                     }
                 }

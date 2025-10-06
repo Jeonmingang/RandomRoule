@@ -54,7 +54,7 @@ public class ClaimGUI {
         for (int i=0;i<SLOTS_PER_PAGE;i++) {
             int idx = start + i;
             if (idx >= items.size()) break;
-            inv.setItem(i, items.get(idx).clone());
+            ItemStack _tmp = items.get(idx).clone(); Text.sanitize(_tmp); inv.setItem(i, _tmp);
         }
 
         // Nav & All buttons
