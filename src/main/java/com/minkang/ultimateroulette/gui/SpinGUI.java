@@ -139,6 +139,42 @@ public class SpinGUI {
                     Reward win = reel.get(centerReelIndex);
                     ItemStack prize = (win.getItem()!=null ? win.getItem().clone() : new ItemStack(org.bukkit.Material.CHEST));
                     plugin.storage().addClaim(p.getUniqueId(), prize);
+                    // === Broadcast if this is a lowest-probability reward ===
+                    try {
+                        boolean bcEnabled = plugin.getConfig().getBoolean("broadcast.lowest_chance.enabled", false);
+                        if (bcEnabled) {
+                            // find min and max weight among rewards for this key
+                            int minW = Integer.MAX_VALUE;
+                            int maxW = 0;
+                            for (Reward rwd : def.getRewards()) {
+                                int w = Math.max(0, rwd.getWeight());
+                                if (w == 0) continue;
+                                if (w < minW) minW = w;
+                                if (w > maxW) maxW = w;
+                            }
+                            // Only broadcast if there exists a strict rarity (min < max),
+                            // and the winning reward's weight equals the minimum.
+                            int wWin = Math.max(0, win.getWeight());
+                            if (minW != Integer.MAX_VALUE && minW < maxW && wWin == minW) {
+                                String raw = plugin.getConfig().getString(
+                                    "broadcast.lowest_chance.message",
+                                    "&6[랜덤룰렛] &e{player}&7님이 &b{key}&7에서 &d{item}&7(최저 확률)&7을 뽑았습니다! 축하!"
+                                );
+                                String itemName;
+                                if (prize.hasItemMeta() && prize.getItemMeta().hasDisplayName()) {
+                                    itemName = prize.getItemMeta().getDisplayName();
+                                } else {
+                                    itemName = prize.getType().name();
+                                }
+                                String out = raw
+                                    .replace("{player}", p.getName())
+                                    .replace("{key}", def.getName())
+                                    .replace("{item}", itemName);
+                                Bukkit.getServer().broadcastMessage(Text.color(out));
+                            }
+                        }
+                    } catch (Throwable ignored) {}
+
                     p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.2f);
                     p.sendMessage(Text.color("&a보상이 보관함에 지급되었습니다."));
                 }
