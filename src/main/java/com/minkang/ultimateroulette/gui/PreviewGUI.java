@@ -28,11 +28,19 @@ public class PreviewGUI {
     }
 
     private Inventory buildInventory() {
-        // 27-slot simple inventory; you can replace with your existing layout logic
-        Inventory inv = Bukkit.createInventory(null, 27, ChatColor.GOLD + "Preview");
-        // If KeyDef contains preview items, put them here (placeholder)
-        ItemStack reward = key != null ? key.getPreviewItem() : null;
-        if (reward != null) inv.setItem(13, reward);
-        return inv;
-    }
+    String title = ChatColor.GOLD + "Preview";
+    try {
+        // Try to show key name if available via toString()
+        if (key != null) {
+            String k = String.valueOf(key);
+            if (k != null && !k.trim().isEmpty() && !"null".equalsIgnoreCase(k.trim())) {
+                title = ChatColor.GOLD + "Preview: " + ChatColor.YELLOW + k;
+            }
+        }
+    } catch (Throwable ignored) {}
+    Inventory inv = Bukkit.createInventory(null, 27, title);
+    // Minimal placeholder layout; no dependency on KeyDef methods
+    return inv;
+}
+
 }
