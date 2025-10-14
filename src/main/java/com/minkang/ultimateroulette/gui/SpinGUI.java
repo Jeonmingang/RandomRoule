@@ -44,7 +44,9 @@ public class SpinGUI {
     }
 
     public void open(Player p) {
-        inv = Bukkit.createInventory(null, 27, title());
+        SpinGUIHolder holder = new SpinGUIHolder();
+        inv = Bukkit.createInventory(holder, 27, title());
+        holder.setInventory(inv);
         // Markers
         ItemStack mark = new ItemStack(Material.HOPPER);
         ItemMeta mm = mark.getItemMeta();
@@ -72,6 +74,8 @@ public class SpinGUI {
     }
 
     private void startSpin(final Player p) {
+        // 스핀 시작 표시 (ESC 방지)
+        try { ((SpinGUIHolder) inv.getHolder()).setSpinning(true);} catch (Throwable ignored) {}
         // Build weighted reel
         List<Reward> rewards = def.getRewards();
         List<Reward> reel = new ArrayList<Reward>();
@@ -175,8 +179,9 @@ public class SpinGUI {
                         }
                     } catch (Throwable ignored) {}
 
+                    try { ((SpinGUIHolder) inv.getHolder()).setSpinning(false);} catch (Throwable ignored) {}
                     p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.2f);
-                    p.sendMessage(Text.color("&a보상이 보관함에 지급되었습니다."));
+                    p.sendMessage(Text.color("&a보상이 보관함에 지급되었습니다. &7(/랜덤 보관함 으로 확인)"));
                 }
             }
         }.runTaskTimer(plugin, 0L, 2L);
