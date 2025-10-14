@@ -3,8 +3,10 @@ package com.minkang.ultimateroulette.gui;
 import com.minkang.ultimateroulette.UltimateRoulette;
 import com.minkang.ultimateroulette.data.KeyDef;
 import com.minkang.ultimateroulette.data.Reward;
-import com.minkang.ultimateroulette.gui.ClaimGUI;
 import com.minkang.ultimateroulette.util.Text;
+import com.minkang.ultimateroulette.pkg.PackageDef;
+
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -16,38 +18,50 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 
+/**
+ * Unified GUI listener:
+ * - Edit GUI (키 설정)
+ * - Preview GUI (미리보기)
+ * - Spin GUI (스핀 중 조작/닫힘 방지)
+ * - Claim GUI (보관함)
+ * - Package GUI (패키지 미리보기/수령)
+ * - Package Edit GUI 닫힘 저장
+ */
 public class GuiListener implements Listener {
 
     private final UltimateRoulette plugin;
     public GuiListener(UltimateRoulette plugin) { this.plugin = plugin; }
 
-    // ---------- Title helpers ----------
+    // ----- title helpers -----
     private boolean isEdit(String title) {
         if (title == null) return false;
         String plain = ChatColor.stripColor(title);
         return plain != null && plain.startsWith("설정:");
     }
     private boolean isPreview(String title) {
-    if (title == null) return false;
-    String plain = ChatColor.stripColor(title);
-    return plain != null && plain.startsWith("미리보기:");
-// 패키지 설정 GUI에서 ESC로 닫을 때도 안전 저장
-@EventHandler
-public void onPackageEditClose(InventoryCloseEvent e) {
-    String title = e.getView().getTitle();
-    String plain = org.bukkit.ChatColor.stripColor(title == null ? "" : title);
-    if (plain.startsWith("패키지 설정:")) {
-        try { plugin.packages().save(); } catch (Throwable ignored) {}
+        if (title == null) return false;
+        String plain = ChatColor.stripColor(title);
+        return plain != null && plain.startsWith("미리보기:");
     }
-}
-
-}
-private boolean isSpin(String title) {
+    private boolean isSpin(String title) {
         if (title == null) return false;
         String plain = ChatColor.stripColor(title);
         return plain != null && plain.startsWith("룰렛 스핀:");
     }
+    private boolean isPackagePreview(String title) {
+        if (title == null) return false;
+        String plain = ChatColor.stripColor(title);
+        return plain != null && plain.startsWith("패키지:") && !plain.contains("설정");
+    }
+    private boolean isPackageEdit(String title) {
+        if (title == null) return false;
+        String plain = ChatColor.stripColor(title);
+        return plain != null && plain.startsWith("패키지 설정:");
+    }
+
     private int currentPageFromTitle(String title) {
         try {
             String plain = ChatColor.stripColor(title);
@@ -55,6 +69,9 @@ private boolean isSpin(String title) {
             if (pIdx >= 0) {
                 int end = plain.indexOf(')', pIdx);
                 String num = plain.substring(pIdx + 2, end);
+                // In claim it's pX/Y; handle like "p2/5" -> take before slash
+                int slash = num.indexOf('/');
+                if (slash >= 0) num = num.substring(0, slash);
                 return Math.max(0, Integer.parseInt(num) - 1);
             }
         } catch (Exception ignored) {}
@@ -63,50 +80,60 @@ private boolean isSpin(String title) {
     private String keyFromTitle(String title) {
         try {
             String plain = ChatColor.stripColor(title);
-            int s = plain.indexOf("설정: ") + 4;
+            int s = plain.indexOf("설정:") + 3;
+            // allow optional space after ':'
+            if (s > 0 && s < plain.length() && plain.charAt(s) == ' ') s++;
             int e = plain.indexOf(" (p");
+            if (e < 0) e = plain.length();
+            if (s >= 0 && e > s) return plain.substring(s, e).trim();
+        } catch (Exception ignored) {}
+        return null;
+    }
+    private String packageNameFromTitle(String title) {
+        try {
+            String plain = ChatColor.stripColor(title);
+            int s = plain.indexOf("패키지:") + 4;
+            if (s > 0 && s < plain.length() && plain.charAt(s) == ' ') s++;
+            int e = plain.indexOf(" (");
+            if (e < 0) e = plain.length();
             if (s >= 0 && e > s) return plain.substring(s, e).trim();
         } catch (Exception ignored) {}
         return null;
     }
 
-    // ---------- Edit GUI: click ----------
+    // ----- Edit GUI: click -----
     @EventHandler
-    public void onClick(InventoryClickEvent e) {
+    public void onEditClick(InventoryClickEvent e) {
         if (!(e.getWhoClicked() instanceof Player)) return;
         Player p = (Player) e.getWhoClicked();
         String title = e.getView().getTitle();
         if (!isEdit(title)) return;
 
-        e.setCancelled(true); // 편집 GUI는 실제 이동 금지, 설정만 반영
+        e.setCancelled(true);
 
         String key = keyFromTitle(title);
+        if (key == null) return;
+
         KeyDef def = plugin.keys().get(key);
         if (def == null) return;
 
-        int page = currentPageFromTitle(title);
-        Inventory top = e.getView().getTopInventory();
-        Inventory bottom = e.getView().getBottomInventory();
         int raw = e.getRawSlot();
-        boolean fromBottom = (e.getClickedInventory() != null && e.getClickedInventory().equals(bottom));
+        int page = currentPageFromTitle(title);
 
-        // 1) 하단 → 추가 (클릭/쉬프트클릭)
-        if (fromBottom) {
-            ItemStack src = e.getCurrentItem();
-            if (src != null && src.getType() != Material.AIR) {
-                def.getRewards().add(new Reward(src.clone(), 1));
-                plugin.keys().save();
-                new EditGUI(plugin, def, page).open(p);
-            }
+        if (raw == EditGUI.PREV_SLOT) {
+            if (page > 0) new EditGUI(plugin, def, page - 1).open(p);
+            return;
+        }
+        if (raw == EditGUI.NEXT_SLOT) {
+            int totalPages = Math.max(1, (int) Math.ceil(def.getRewards().size() / (double) EditGUI.SLOTS_PER_PAGE));
+            if (page + 1 < totalPages) new EditGUI(plugin, def, page + 1).open(p);
+            return;
+        }
+        if (raw == EditGUI.PAGE_SLOT) {
             return;
         }
 
-        // 2) 페이징
-        if (raw == EditGUI.PREV_SLOT) { if (page > 0) new EditGUI(plugin, def, page - 1).open(p); return; }
-        if (raw == EditGUI.NEXT_SLOT) { boolean hasNext = def.getRewards().size() > (page + 1) * EditGUI.SLOTS_PER_PAGE; if (hasNext) new EditGUI(plugin, def, page + 1).open(p); return; }
-        if (raw == EditGUI.PAGE_SLOT) { return; }
-
-        // 3) 상단 0..44: 가중치 조정/삭제 또는 커서 아이템 추가
+        // reward slot
         if (raw >= 0 && raw < EditGUI.SLOTS_PER_PAGE) {
             int idx = page * EditGUI.SLOTS_PER_PAGE + raw;
             if (idx < def.getRewards().size()) {
@@ -131,329 +158,217 @@ private boolean isSpin(String title) {
         }
     }
 
-    // ---------- Edit GUI: drag ----------
+    // ----- Edit GUI: drag -----
     @EventHandler
-    public void onDrag(InventoryDragEvent e) {
+    public void onEditDrag(InventoryDragEvent e) {
+        if (!(e.getWhoClicked() instanceof Player)) return;
+        String title = e.getView().getTitle();
+        if (!isEdit(title)) return;
+        e.setCancelled(true);
+    }
+
+    // ----- Preview GUI -----
+    @EventHandler
+    public void onPreviewClick(InventoryClickEvent e) {
+        if (!(e.getWhoClicked() instanceof Player)) return;
+        Player p = (Player)e.getWhoClicked();
+        String title = e.getView().getTitle();
+        if (!isPreview(title)) return;
+        e.setCancelled(true);
+
+        // Resolve KeyDef and current page from title
+        String plain = ChatColor.stripColor(title);
+        String key = null;
+        try {
+            int s = plain.indexOf("미리보기:") + 5;
+            if (s > 0 && s < plain.length() && plain.charAt(s) == ' ') s++;
+            int eIdx = plain.indexOf(" (p");
+            if (eIdx < 0) eIdx = plain.length();
+            key = plain.substring(s, eIdx).trim();
+        } catch (Exception ignored) {}
+        if (key == null || key.isEmpty()) {
+            p.sendMessage(Text.color("&c키 정보를 찾을 수 없습니다."));
+            return;
+        }
+        KeyDef def = plugin.keys().get(key);
+        if (def == null) {
+            p.sendMessage(Text.color("&c키 정보를 찾을 수 없습니다."));
+            return;
+        }
+        int page = currentPageFromTitle(title);
+
+        // Prev / Next
+        if (e.getRawSlot() == 45) { // prev
+            if (page > 0) new PreviewGUI(def).open(p, page - 1);
+            return;
+        }
+        if (e.getRawSlot() == 53) { // next
+            int total = Math.max(1, (int)Math.ceil(def.getRewards().size() / 45.0));
+            if (page + 1 < total) new PreviewGUI(def).open(p, page + 1);
+            return;
+        }
+
+        // Start button (slot 49)
+        if (e.getRawSlot() == 49) {
+            if (!consumeKey(p, def)) {
+                p.sendMessage(Text.color("&c전용 아이템이 부족합니다."));
+                return;
+            }
+            new SpinGUI(plugin, def).open(p);
+        }
+    }
+
+    @EventHandler
+    public void onPreviewDrag(InventoryDragEvent e) {
+        String title = e.getView().getTitle();
+        if (isPreview(title)) e.setCancelled(true);
+    }
+
+    // ----- Spin GUI -----
+    @EventHandler public void onSpinClick(InventoryClickEvent e) {
+        String title = e.getView().getTitle();
+        if (isSpin(title)) e.setCancelled(true);
+    }
+    @EventHandler public void onSpinDrag(InventoryDragEvent e) {
+        String title = e.getView().getTitle();
+        if (isSpin(title)) e.setCancelled(true);
+    }
+    @EventHandler public void onSpinClose(InventoryCloseEvent e) {
+        String title = e.getView().getTitle();
+        if (!isSpin(title)) return;
+        Inventory inv = e.getInventory();
+        if (inv == null) return;
+        org.bukkit.inventory.InventoryHolder holder = inv.getHolder();
+        if (holder instanceof SpinGUIHolder) {
+            SpinGUIHolder h = (SpinGUIHolder) holder;
+            if (h.isSpinning() && e.getPlayer() instanceof Player) {
+                Player p = (Player) e.getPlayer();
+                Bukkit.getScheduler().runTask(plugin, () -> p.openInventory(inv));
+            }
+        } else {
+            // Fallback: if no holder, just reopen once to avoid ESC skip during animation
+            if (e.getPlayer() instanceof Player) {
+                Player p = (Player) e.getPlayer();
+                Bukkit.getScheduler().runTask(plugin, () -> p.openInventory(inv));
+            }
+        }
+    }
+
+    // ----- Claim GUI -----
+    @EventHandler
+    public void onClaimClick(InventoryClickEvent e) {
+        if (!(e.getWhoClicked() instanceof Player)) return;
+        Player p = (Player) e.getWhoClicked();
+        ClaimGUI.handleClick(plugin, p, e);
+    }
+    @EventHandler
+    public void onClaimDrag(InventoryDragEvent e) {
+        if (ClaimGUI.isClaimTitle(e.getView().getTitle())) e.setCancelled(true);
+    }
+
+    // ----- Package GUI (Preview/Take) -----
+    @EventHandler
+    public void onPackageClick(InventoryClickEvent e) {
         if (!(e.getWhoClicked() instanceof Player)) return;
         Player p = (Player) e.getWhoClicked();
         String title = e.getView().getTitle();
-        if (!isEdit(title)) return;
+        if (!isPackagePreview(title)) return;
 
-        e.setCancelled(true); // 실제 이동 금지
+        e.setCancelled(true); // no taking items out
+        int raw = e.getRawSlot();
+        if (raw != 49) return; // only via '받기' button
 
-        String key = keyFromTitle(title);
-        KeyDef def = plugin.keys().get(key);
+        String name = packageNameFromTitle(title);
+        if (name == null || name.isEmpty()) return;
+        PackageDef def = plugin.packages().get(name);
         if (def == null) return;
 
-        ItemStack cursor = e.getOldCursor();
-        if (cursor == null || cursor.getType() == Material.AIR) return;
-
-        int page = currentPageFromTitle(title);
-        def.getRewards().add(new Reward(cursor.clone(), 1));
-        plugin.keys().save();
-        new EditGUI(plugin, def, page).open(p);
-    }
-
-    // ---------- Spin GUI: 모든 조작 차단 ----------
-    
-
-@EventHandler
-public void onPreviewClick(InventoryClickEvent e) {
-    if (!(e.getWhoClicked() instanceof Player)) return;
-    Player p = (Player)e.getWhoClicked();
-    String title = e.getView().getTitle();
-    if (!isPreview(title)) return;
-    e.setCancelled(true);
-
-    // Resolve KeyDef and current page from title
-    String plain = ChatColor.stripColor(title);
-    String key = null;
-    try {
-        int s = plain.indexOf("미리보기:") + 5;
-        int eIdx = plain.indexOf(" (p");
-        if (s >= 0) {
-            if (eIdx > s) key = plain.substring(s, eIdx).trim();
-            else key = plain.substring(s).trim();
-        }
-    } catch (Exception ignored) {}
-    KeyDef def = (key != null ? plugin.keys().get(key) : null);
-    if (def == null) {
-        p.sendMessage(Text.color("&c키 정보를 찾을 수 없습니다."));
-        return;
-    }
-    int page = currentPageFromTitle(title);
-
-    // Prev / Next
-    if (e.getRawSlot() == 45) { // prev
-        if (page > 0) {
-            new PreviewGUI(def).open(p, page - 1);
-        }
-        return;
-    }
-    if (e.getRawSlot() == 53) { // next
-        int total = Math.max(1, (int)Math.ceil(def.getRewards().size() / 45.0));
-        if (page + 1 < total) {
-            new PreviewGUI(def).open(p, page + 1);
-        }
-        return;
-    }
-
-    // Start button (slot 49)
-    if (e.getRawSlot() == 49) {
-        if (!consumeKey(p, def)) {
-            p.sendMessage(Text.color("&c전용 아이템이 부족합니다."));
+        if (!consumePackageKey(p, def)) {
+            p.sendMessage(Text.color("&c전용 패키지 아이템이 부족합니다."));
             return;
         }
-        new SpinGUI(plugin, def).open(p);
-    }
-// 패키지 설정 GUI에서 ESC로 닫을 때도 안전 저장
-@EventHandler
-public void onPackageEditClose(InventoryCloseEvent e) {
-    String title = e.getView().getTitle();
-    String plain = org.bukkit.ChatColor.stripColor(title == null ? "" : title);
-    if (plain.startsWith("패키지 설정:")) {
-        try { plugin.packages().save(); } catch (Throwable ignored) {}
-    }
-}
 
-}
-
-@EventHandler
-public void onClaimClick(InventoryClickEvent e) {
-    if (!(e.getWhoClicked() instanceof org.bukkit.entity.Player)) return;
-    org.bukkit.entity.Player p = (org.bukkit.entity.Player)e.getWhoClicked();
-    if (!ClaimGUI.isClaimTitle(e.getView().getTitle())) return;
-    e.setCancelled(true);
-    ClaimGUI.handleClick(plugin, p, e);
-// 패키지 설정 GUI에서 ESC로 닫을 때도 안전 저장
-@EventHandler
-public void onPackageEditClose(InventoryCloseEvent e) {
-    String title = e.getView().getTitle();
-    String plain = org.bukkit.ChatColor.stripColor(title == null ? "" : title);
-    if (plain.startsWith("패키지 설정:")) {
-        try { plugin.packages().save(); } catch (Throwable ignored) {}
-    }
-}
-
-}
-
-@EventHandler
-public void onClaimDrag(InventoryDragEvent e) {
-    if (!ClaimGUI.isClaimTitle(e.getView().getTitle())) return;
-    e.setCancelled(true);
-// 패키지 설정 GUI에서 ESC로 닫을 때도 안전 저장
-@EventHandler
-public void onPackageEditClose(InventoryCloseEvent e) {
-    String title = e.getView().getTitle();
-    String plain = org.bukkit.ChatColor.stripColor(title == null ? "" : title);
-    if (plain.startsWith("패키지 설정:")) {
-        try { plugin.packages().save(); } catch (Throwable ignored) {}
-    }
-}
-
-}
-@EventHandler
-    public void onSpinClick(org.bukkit.event.inventory.InventoryClickEvent e) {
-        String title = e.getView().getTitle();
-        if (isSpin(title)) e.setCancelled(true);
+        // Give items: inventory first, leftover -> 보관함
+        for (ItemStack it : def.getItems()) {
+            if (it == null || it.getType() == Material.AIR) continue;
+            ItemStack give = it.clone();
+            java.util.HashMap<Integer, ItemStack> left = p.getInventory().addItem(give);
+            for (ItemStack rem : left.values()) {
+                plugin.storage().addClaim(p.getUniqueId(), rem);
+            }
+        }
+        p.sendMessage(Text.color("&a패키지 보상이 지급되었습니다. &7(/랜덤 보관함 으로 확인)"));
+        p.closeInventory();
     }
     @EventHandler
-    public void onSpinDrag(org.bukkit.event.inventory.InventoryDragEvent e) {
+    public void onPackageDrag(InventoryDragEvent e) {
         String title = e.getView().getTitle();
-        if (isSpin(title)) e.setCancelled(true);
+        if (isPackagePreview(title)) e.setCancelled(true);
     }
 
-
-private boolean consumeKey(Player p, KeyDef def) {
-    // Try main hand first
-    ItemStack hand = p.getInventory().getItemInMainHand();
-    if (isKeyItem(hand, def)) {
-        int amt = hand.getAmount();
-        if (amt <= 1) p.getInventory().setItemInMainHand(null);
-        else hand.setAmount(amt - 1);
-        return true;
+    // Package Edit GUI: ensure save on ESC close
+    @EventHandler
+    public void onPackageEditClose(InventoryCloseEvent e) {
+        String title = e.getView().getTitle();
+        if (isPackageEdit(title)) {
+            try { plugin.packages().save(); } catch (Throwable ignored) {}
+        }
     }
-    // Search inventory
-    for (int i=0;i<p.getInventory().getSize();i++) {
-        ItemStack it = p.getInventory().getItem(i);
-        if (isKeyItem(it, def)) {
-            int amt = it.getAmount();
-            if (amt <= 1) p.getInventory().setItem(i, null);
-            else it.setAmount(amt - 1);
+
+    // ----- helpers -----
+    private boolean consumeKey(Player p, KeyDef def) {
+        // main hand
+        ItemStack hand = p.getInventory().getItemInMainHand();
+        if (isKeyItem(hand, def)) {
+            int amt = hand.getAmount();
+            if (amt <= 1) p.getInventory().setItemInMainHand(null);
+            else hand.setAmount(amt - 1);
             return true;
         }
-    }
-    return false;
-// 패키지 설정 GUI에서 ESC로 닫을 때도 안전 저장
-@EventHandler
-public void onPackageEditClose(InventoryCloseEvent e) {
-    String title = e.getView().getTitle();
-    String plain = org.bukkit.ChatColor.stripColor(title == null ? "" : title);
-    if (plain.startsWith("패키지 설정:")) {
-        try { plugin.packages().save(); } catch (Throwable ignored) {}
-    }
-}
-
-}
-private boolean isKeyItem(ItemStack it, KeyDef def) {
-    if (it == null || it.getType() == Material.AIR || !it.hasItemMeta()) return false;
-    org.bukkit.persistence.PersistentDataContainer pdc = it.getItemMeta().getPersistentDataContainer();
-    String tag = pdc.getOrDefault(plugin.keyTag(), org.bukkit.persistence.PersistentDataType.STRING, null);
-    return tag != null && tag.equals(def.getName());
-// 패키지 설정 GUI에서 ESC로 닫을 때도 안전 저장
-@EventHandler
-public void onPackageEditClose(InventoryCloseEvent e) {
-    String title = e.getView().getTitle();
-    String plain = org.bukkit.ChatColor.stripColor(title == null ? "" : title);
-    if (plain.startsWith("패키지 설정:")) {
-        try { plugin.packages().save(); } catch (Throwable ignored) {}
-    }
-}
-
-}
-
-@EventHandler
-public void onSpinClose(InventoryCloseEvent e) {
-    String title = e.getView().getTitle();
-    // 스핀 GUI 닫기 방지 (진행중일 때만)
-    try {
-        org.bukkit.inventory.InventoryHolder holder = e.getInventory().getHolder();
-        if (holder instanceof com.minkang.ultimateroulette.gui.SpinGUIHolder) {
-            com.minkang.ultimateroulette.gui.SpinGUIHolder h = (com.minkang.ultimateroulette.gui.SpinGUIHolder) holder;
-            if (h.isSpinning()) {
-                org.bukkit.entity.Player p = (org.bukkit.entity.Player) e.getPlayer();
-                // 다음 틱에 다시 열어 줌
-                org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
-                    try { p.openInventory(e.getInventory()); } catch (Throwable ignored) {}
-                });
+        // inventory scan
+        for (int i = 0; i < p.getInventory().getSize(); i++) {
+            ItemStack it = p.getInventory().getItem(i);
+            if (isKeyItem(it, def)) {
+                int amt = it.getAmount();
+                if (amt <= 1) p.getInventory().setItem(i, null);
+                else it.setAmount(amt - 1);
+                return true;
             }
         }
-    } catch (Throwable ignored) {}
-// 패키지 설정 GUI에서 ESC로 닫을 때도 안전 저장
-@EventHandler
-public void onPackageEditClose(InventoryCloseEvent e) {
-    String title = e.getView().getTitle();
-    String plain = org.bukkit.ChatColor.stripColor(title == null ? "" : title);
-    if (plain.startsWith("패키지 설정:")) {
-        try { plugin.packages().save(); } catch (Throwable ignored) {}
+        return false;
     }
-}
-
-}
-
-// -------- 패키지 GUI: 아이템 꺼내기 금지 & '받기' 버튼만 동작 --------
-private boolean isPackageView(String title) {
-    if (title == null) return false;
-    String plain = org.bukkit.ChatColor.stripColor(title);
-    return plain != null && plain.startsWith("패키지:");
-// 패키지 설정 GUI에서 ESC로 닫을 때도 안전 저장
-@EventHandler
-public void onPackageEditClose(InventoryCloseEvent e) {
-    String title = e.getView().getTitle();
-    String plain = org.bukkit.ChatColor.stripColor(title == null ? "" : title);
-    if (plain.startsWith("패키지 설정:")) {
-        try { plugin.packages().save(); } catch (Throwable ignored) {}
+    private boolean isKeyItem(ItemStack it, KeyDef def) {
+        if (it == null || it.getType() == Material.AIR || !it.hasItemMeta()) return false;
+        String tag = it.getItemMeta().getPersistentDataContainer()
+                .getOrDefault(plugin.keyTag(), PersistentDataType.STRING, null);
+        return tag != null && tag.equals(def.getName());
     }
-}
 
-}
-
-@EventHandler
-public void onPackageClick(org.bukkit.event.inventory.InventoryClickEvent e) {
-    if (!(e.getWhoClicked() instanceof org.bukkit.entity.Player)) return;
-    org.bukkit.entity.Player p = (org.bukkit.entity.Player) e.getWhoClicked();
-    String title = e.getView().getTitle();
-    if (!isPackageView(title)) return;
-
-    e.setCancelled(true); // 꺼내기 금지
-
-    // 받기 버튼: 중앙 하단(49)
-    if (e.getRawSlot() == 49) {
-        // 패키지 이름 파싱
-        String plain = org.bukkit.ChatColor.stripColor(title);
-        String pkgName;
-        try {
-            int idx = plain.indexOf("패키지:") + 4;
-            pkgName = plain.substring(idx).trim();
-        } catch (Exception ex) { return; }
-
-        com.minkang.ultimateroulette.pkg.PackageDef def = plugin.packages().get(pkgName);
-        if (def == null) { p.sendMessage(com.minkang.ultimateroulette.util.Text.color("&c패키지 정보를 찾을 수 없습니다.")); return; }
-
-        // 인벤토리에서 전용 패키지 아이템 1개 소비
-        boolean consumed = false;
-        org.bukkit.inventory.PlayerInventory inv = p.getInventory();
-        for (int i=0;i<inv.getSize();i++) {
-            org.bukkit.inventory.ItemStack it = inv.getItem(i);
-            if (it!=null && it.hasItemMeta()) {
-                org.bukkit.persistence.PersistentDataContainer pdc = it.getItemMeta().getPersistentDataContainer();
-                String tag = pdc.getOrDefault(plugin.packageTag(), org.bukkit.persistence.PersistentDataType.STRING, null);
-                if (tag!=null && tag.equalsIgnoreCase(def.getName())) {
-                    int amt = it.getAmount();
-                    if (amt <= 1) inv.setItem(i, null);
-                    else it.setAmount(amt-1);
-                    consumed = true;
-                    break;
-                }
+    private boolean consumePackageKey(Player p, PackageDef def) {
+        // Try main hand first
+        ItemStack hand = p.getInventory().getItemInMainHand();
+        if (isPackageKeyItem(hand, def)) {
+            int amt = hand.getAmount();
+            if (amt <= 1) p.getInventory().setItemInMainHand(null);
+            else hand.setAmount(amt - 1);
+            return true;
+        }
+        // Search inventory
+        for (int i=0;i<p.getInventory().getSize();i++) {
+            ItemStack it = p.getInventory().getItem(i);
+            if (isPackageKeyItem(it, def)) {
+                int amt = it.getAmount();
+                if (amt <= 1) p.getInventory().setItem(i, null);
+                else it.setAmount(amt - 1);
+                return true;
             }
         }
-        if (!consumed) { p.sendMessage(com.minkang.ultimateroulette.util.Text.color("&c전용 패키지 아이템이 필요합니다.")); return; }
-
-        // 지급: 인벤토리 추가, 넘치는 건 보관함으로
-        java.util.List<org.bukkit.inventory.ItemStack> items = def.getItems();
-        if (items==null || items.isEmpty()) { p.sendMessage(com.minkang.ultimateroulette.util.Text.color("&c이 패키지에 등록된 아이템이 없습니다.")); return; }
-        java.util.HashMap<Integer, org.bukkit.inventory.ItemStack> overAll = new java.util.HashMap<>();
-        for (org.bukkit.inventory.ItemStack src : items) {
-            org.bukkit.inventory.ItemStack give = src.clone();
-            java.util.Map<Integer, org.bukkit.inventory.ItemStack> over = inv.addItem(give);
-            overAll.putAll(over);
-        }
-        // 남은 것들은 보관함으로 이동
-        for (org.bukkit.inventory.ItemStack rem : overAll.values()) {
-            if (rem == null) continue;
-            plugin.storage().addClaim(p.getUniqueId(), rem);
-        }
-
-        p.closeInventory();
-        p.sendMessage(com.minkang.ultimateroulette.util.Text.color("&a패키지 보상이 지급되었습니다. &7(/랜덤 보관함 으로 확인)"));
-        p.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.2f);
+        return false;
     }
-// 패키지 설정 GUI에서 ESC로 닫을 때도 안전 저장
-@EventHandler
-public void onPackageEditClose(InventoryCloseEvent e) {
-    String title = e.getView().getTitle();
-    String plain = org.bukkit.ChatColor.stripColor(title == null ? "" : title);
-    if (plain.startsWith("패키지 설정:")) {
-        try { plugin.packages().save(); } catch (Throwable ignored) {}
+    private boolean isPackageKeyItem(ItemStack it, PackageDef def) {
+        if (it == null || it.getType() == Material.AIR || !it.hasItemMeta()) return false;
+        String tag = it.getItemMeta().getPersistentDataContainer()
+                .getOrDefault(plugin.packageTag(), PersistentDataType.STRING, null);
+        return tag != null && tag.equals(def.getName());
     }
-}
-
-}
-
-@EventHandler
-public void onPackageDrag(org.bukkit.event.inventory.InventoryDragEvent e) {
-    String title = e.getView().getTitle();
-    if (isPackageView(title)) e.setCancelled(true);
-// 패키지 설정 GUI에서 ESC로 닫을 때도 안전 저장
-@EventHandler
-public void onPackageEditClose(InventoryCloseEvent e) {
-    String title = e.getView().getTitle();
-    String plain = org.bukkit.ChatColor.stripColor(title == null ? "" : title);
-    if (plain.startsWith("패키지 설정:")) {
-        try { plugin.packages().save(); } catch (Throwable ignored) {}
-    }
-}
-
-}
-
-// 패키지 설정 GUI에서 ESC로 닫을 때도 안전 저장
-@EventHandler
-public void onPackageEditClose(InventoryCloseEvent e) {
-    String title = e.getView().getTitle();
-    String plain = org.bukkit.ChatColor.stripColor(title == null ? "" : title);
-    if (plain.startsWith("패키지 설정:")) {
-        try { plugin.packages().save(); } catch (Throwable ignored) {}
-    }
-}
-
 }
