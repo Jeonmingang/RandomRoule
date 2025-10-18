@@ -329,7 +329,7 @@ public class GuiListener implements Listener {
     private boolean isPackageKeyItem(ItemStack it, PackageDef def) {
         if (it == null || it.getType() == Material.AIR || !it.hasItemMeta()) return false;
         String tag = it.getItemMeta().getPersistentDataContainer()
-                .getOrDefault(plugin.packageKeyTag(), PersistentDataType.STRING, null);
+                .getOrDefault(plugin.packageTag(), PersistentDataType.STRING, null);
         return tag != null && tag.equals(def.getName());
     }
     private boolean consumePackageKey(Player p, PackageDef def) {
@@ -355,38 +355,48 @@ public class GuiListener implements Listener {
     // ---------------- Package Preview/Take ----------------
     @EventHandler
     public void onPackageClick(InventoryClickEvent e) {
-        if (!(e.getWhoClicked() instanceof Player)) return;
-        Player p = (Player) e.getWhoClicked();
-        String title = e.getView().getTitle();
-        if (!isPackagePreview(title)) return;
+            if (!(e.getWhoClicked() instanceof Player)) return;
+            Player p = (Player) e.getWhoClicked();
+            String title = e.getView().getTitle();
+            if (!isPackagePreview(title)) return;
 
-        String name = packageNameFromTitle(title);
-        if (name == null || name.isEmpty()) return;
-        PackageDef def = plugin.packages().get(name);
-        if (def == null) return;
+            String name = packageNameFromTitle(title);
+            if (name == null || name.isEmpty()) return;
+            com.minkang.ultimateroulette.pkg.PackageDef def = plugin.packages().get(name);
+            if (def == null) return;
 
-        e.setCancelled(true);
-        int slot = e.getRawSlot();
-        if (slot == 45) { // prev
-            new com.minkang.ultimateroulette.pkg.gui.PackageGUI(plugin).open(p, name, false);
-            return;
-        }
-        if (slot == 49) { // take
-            if (!consumePackageKey(p, def)) {
-                p.sendMessage(Text.color("&c해당 패키지 키가 필요합니다."));
-                return;
-            }
-            for (ItemStack it : def.getItems()) {
-                if (it != null && it.getType() != Material.AIR) {
-                    p.getInventory().addItem(it.clone());
+            e.setCancelled(true);
+            int slot = e.getRawSlot();
+            if (slot == 49) { // 수령
+                if (!consumePackageKey(p, def)) {
+                    p.sendMessage(com.minkang.ultimateroulette.util.Text.color("&c해당 패키지 키가 필요합니다."));
+                    return;
                 }
+                for (org.bukkit.inventory.ItemStack it : def.getItems()) {
+                    if (it != null && it.getType() != org.bukkit.Material.AIR) {
+                        p.getInventory().addItem(it.clone());
+                    }
+                }
+                p.sendMessage(com.minkang.ultimateroulette.util.Text.color("&a패키지 아이템을 수령했습니다."));
+                p.closeInventory();
             }
-            p.sendMessage(Text.color("&a패키지 아이템을 수령했습니다."));
-            p.closeInventory();
-            return;
+
         }
-        if (slot == 53) { // next
-            new com.minkang.ultimateroulette.pkg.gui.PackageGUI(plugin).open(p, name, true);
+
+
+        // ---------------- Package Edit GUI (delegate to GUI class) ----------------
+        @org.bukkit.event.EventHandler
+        public void onPackageEditClick(org.bukkit.event.inventory.InventoryClickEvent e) {
+            if (!(e.getWhoClicked() instanceof org.bukkit.entity.Player)) return;
+            String title = e.getView().getTitle();
+            if (!isPackageEdit(title)) return;
+            org.bukkit.entity.Player p = (org.bukkit.entity.Player) e.getWhoClicked();
+            com.minkang.ultimateroulette.pkg.gui.PackageEditGUI.handleClick(p, e);
         }
-    }
+
+        @org.bukkit.event.EventHandler
+        public void onPackageEditDrag(org.bukkit.event.inventory.InventoryDragEvent e) {
+            String title = e.getView().getTitle();
+            if (isPackageEdit(title)) e.setCancelled(true);
+        }
 }
