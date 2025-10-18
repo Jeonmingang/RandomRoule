@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.minkang</groupId>
   <artifactId>UltimateRoulette</artifactId>
-  <version>1.6.7</version>
+  <version>1.6.8</version>
   <packaging>jar</packaging>
   <name>UltimateRoulette</name>
   <properties>
@@ -50,7 +50,7 @@
 </plugin>
 
       </plugins>
-    <finalName>UltimateRoulette-1.6.7</finalName>
+    <finalName>UltimateRoulette-1.6.8</finalName>
   </build>
 <repositories>
   <repository>
