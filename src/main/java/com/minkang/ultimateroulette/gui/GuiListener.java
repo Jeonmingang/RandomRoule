@@ -109,7 +109,37 @@ public class GuiListener implements Listener {
         String title = e.getView().getTitle();
         if (!isEdit(title)) return;
 
+        
+        org.bukkit.inventory.Inventory clicked = e.getClickedInventory();
+        org.bukkit.inventory.Inventory top = e.getView().getTopInventory();
+        org.bukkit.inventory.Inventory bottom = e.getView().getBottomInventory();
+        boolean isTopClick = (clicked != null && clicked.equals(top));
+        boolean isBottomClick = (clicked != null && clicked.equals(bottom));
+
+        // Allow normal pickup operations in player's inventory, except we intercept SHIFT-click as quick-add.
+        if (isBottomClick) {
+            if (e.isShiftClick()) {
+                org.bukkit.inventory.ItemStack fromInv = e.getCurrentItem();
+                if (fromInv != null && fromInv.getType() != Material.AIR) {
+                    org.bukkit.inventory.ItemStack toAdd = fromInv.clone();
+                    toAdd.setAmount(1);
+                    def.getRewards().add(new Reward(toAdd, 1));
+                    plugin.keys().save();
+                    e.setCancelled(true);
+                    new EditGUI(plugin, def, page).open(p);
+                } else {
+                    e.setCancelled(true);
+                }
+                return;
+            }
+            // Not shift: let player pick the item to cursor
+            e.setCancelled(false);
+            return;
+        }
+
+        // Top inventory (the editor GUI) remains protected
         e.setCancelled(true);
+
 
         String key = keyFromTitle(title);
         if (key == null) return;
@@ -149,26 +179,16 @@ public class GuiListener implements Listener {
                 return;
             }
             
-            // Also support adding from player's inventory (normal click/shift-click) and hotbar number key/offhand
-            // 1) If click originated from player's inventory, treat it as adding that item
-            if (e.getClickedInventory() != null && e.getClickedInventory().equals(e.getView().getBottomInventory())) {
-                ItemStack fromInv = e.getCurrentItem();
-                if (fromInv != null && fromInv.getType() != Material.AIR) {
-                    ItemStack toAdd = fromInv.clone();
-                    toAdd.setAmount(1);
-                    def.getRewards().add(new Reward(toAdd, 1));
-                    plugin.keys().save();
-                    new EditGUI(plugin, def, page).open(p);
-                    return;
-                }
             }
-            // 2) If user pressed a number key over the top inventory, use that hotbar slot item
+
+            
+            // Support hotbar number key while pointing at editor slots
             if (e.getClick() == ClickType.NUMBER_KEY) {
                 int hb = e.getHotbarButton();
                 if (hb >= 0 && hb < p.getInventory().getSize()) {
-                    ItemStack fromHotbar = p.getInventory().getItem(hb);
+                    org.bukkit.inventory.ItemStack fromHotbar = p.getInventory().getItem(hb);
                     if (fromHotbar != null && fromHotbar.getType() != Material.AIR) {
-                        ItemStack toAdd = fromHotbar.clone();
+                        org.bukkit.inventory.ItemStack toAdd = fromHotbar.clone();
                         toAdd.setAmount(1);
                         def.getRewards().add(new Reward(toAdd, 1));
                         plugin.keys().save();
@@ -177,11 +197,10 @@ public class GuiListener implements Listener {
                     }
                 }
             }
-            // 3) If user used swap-offhand, use offhand item
             if (e.getClick() == ClickType.SWAP_OFFHAND) {
-                ItemStack off = p.getInventory().getItemInOffHand();
+                org.bukkit.inventory.ItemStack off = p.getInventory().getItemInOffHand();
                 if (off != null && off.getType() != Material.AIR) {
-                    ItemStack toAdd = off.clone();
+                    org.bukkit.inventory.ItemStack toAdd = off.clone();
                     toAdd.setAmount(1);
                     def.getRewards().add(new Reward(toAdd, 1));
                     plugin.keys().save();
@@ -190,11 +209,16 @@ public class GuiListener implements Listener {
                 }
             }
 
-            ItemStack cursor = e.getCursor();
+            org.bukkit.inventory.ItemStack cursor = e.getCursor();
+
             if (cursor != null && cursor.getType() != Material.AIR) {
                 def.getRewards().add(new Reward(cursor.clone(), 1));
                 // consume one from cursor for UX
-                ItemStack cur = cursor.clone();
+                org.bukkit.inventory.ItemStack cur = cursor.clone();
+                cur.setAmount(Math.max(0, cursor.getAmount()-1));
+                e.setCursor(cur.getAmount()<=0?null:cur);
+                // consume one from cursor for UX
+                org.bukkit.inventory.ItemStack cur = cursor.clone();
                 cur.setAmount(Math.max(0, cursor.getAmount()-1));
                 e.setCursor(cur.getAmount()<=0?null:cur);
                 plugin.keys().save();
@@ -416,5 +440,128 @@ public class GuiListener implements Listener {
         String tag = it.getItemMeta().getPersistentDataContainer()
                 .getOrDefault(plugin.packageTag(), PersistentDataType.STRING, null);
         return tag != null && tag.equals(def.getName());
+    }
+
+
+    // ----- Package Edit GUI: click -----
+    @EventHandler
+    public void onPackageEditClick(org.bukkit.event.inventory.InventoryClickEvent e) {
+        if (!(e.getWhoClicked() instanceof org.bukkit.entity.Player)) return;
+        org.bukkit.entity.Player p = (org.bukkit.entity.Player) e.getWhoClicked();
+        String title = e.getView().getTitle();
+        if (!isPackageEdit(title)) return;
+
+        org.bukkit.inventory.org.bukkit.inventory.Inventory clicked = e.getClickedInventory();
+        org.bukkit.inventory.org.bukkit.inventory.Inventory top = e.getView().getTopInventory();
+        org.bukkit.inventory.org.bukkit.inventory.Inventory bottom = e.getView().getBottomInventory();
+        boolean isTop = (clicked != null && clicked.equals(top));
+        boolean isBottom = (clicked != null && clicked.equals(bottom));
+
+        String pkg = packageNameFromTitle(title);
+        if (pkg == null || pkg.isEmpty()) return;
+        com.minkang.ultimateroulette.pkg.PackageDef def = plugin.packages().get(pkg);
+        if (def == null) return;
+
+        if (isBottom) {
+            // Quick-add on SHIFT-click from player inventory
+            if (e.isShiftClick()) {
+                org.bukkit.inventory.ItemStack from = e.getCurrentItem();
+                if (from != null && from.getType() != org.bukkit.Material.AIR) {
+                    org.bukkit.inventory.ItemStack add = from.clone();
+                    add.setAmount(1);
+                    def.getItems().add(add);
+                    plugin.packages().save();
+                    e.setCancelled(true);
+                    new com.minkang.ultimateroulette.pkg.gui.PackageEditGUI(plugin, def).open(p);
+                } else {
+                    e.setCancelled(true);
+                }
+                return;
+            }
+            // normal bottom clicks allowed so user can pick item to cursor
+            e.setCancelled(false);
+            return;
+        }
+
+        // Top clicks are managed by editor
+        e.setCancelled(true);
+
+        int raw = e.getRawSlot();
+        if (raw < 0 || raw >= 54) return;
+
+        // Item grid: 0..44
+        if (raw >= 0 && raw < 45) {
+            java.util.List<org.bukkit.inventory.ItemStack> items = def.getItems();
+            if (raw < items.size()) {
+                org.bukkit.inventory.ItemStack it = items.get(raw);
+                org.bukkit.event.inventory.ClickType ct = e.getClick();
+                int amt = it.getAmount();
+                if (ct == org.bukkit.event.inventory.ClickType.LEFT) amt += 1;
+                else if (ct == org.bukkit.event.inventory.ClickType.SHIFT_LEFT) amt += 10;
+                else if (ct == org.bukkit.event.inventory.ClickType.RIGHT) amt = Math.max(1, amt - 1);
+                else if (ct == org.bukkit.event.inventory.ClickType.SHIFT_RIGHT) amt = Math.max(1, amt - 10);
+                else if (ct == org.bukkit.event.inventory.ClickType.DROP) {
+                    items.remove(raw);
+                    plugin.packages().save();
+                    new com.minkang.ultimateroulette.pkg.gui.PackageEditGUI(plugin, def).open(p);
+                    return;
+                } else if (ct == org.bukkit.event.inventory.ClickType.NUMBER_KEY) {
+                    int hb = e.getHotbarButton();
+                    if (hb >= 0 && hb < p.getInventory().getSize()) {
+                        org.bukkit.inventory.ItemStack from = p.getInventory().getItem(hb);
+                        if (from != null && from.getType() != org.bukkit.Material.AIR) {
+                            org.bukkit.inventory.ItemStack add = from.clone();
+                            add.setAmount(1);
+                            items.add(add);
+                            plugin.packages().save();
+                            new com.minkang.ultimateroulette.pkg.gui.PackageEditGUI(plugin, def).open(p);
+                            return;
+                        }
+                    }
+                } else if (ct == org.bukkit.event.inventory.ClickType.SWAP_OFFHAND) {
+                    org.bukkit.inventory.org.bukkit.inventory.ItemStack off = p.getInventory().getItemInOffHand();
+                    if (off != null && off.getType() != org.bukkit.Material.AIR) {
+                        org.bukkit.inventory.ItemStack add = off.clone();
+                        add.setAmount(1);
+                        items.add(add);
+                        plugin.packages().save();
+                        new com.minkang.ultimateroulette.pkg.gui.PackageEditGUI(plugin, def).open(p);
+                        return;
+                    }
+                } else {
+                    // Other top clicks over existing item adjust amount
+                    it.setAmount(Math.min(64, Math.max(1, amt)));
+                    plugin.packages().save();
+                    new com.minkang.ultimateroulette.pkg.gui.PackageEditGUI(plugin, def).open(p);
+                    return;
+                }
+                // If amount changed (left/right), apply and redraw
+                it.setAmount(Math.min(64, Math.max(1, amt)));
+                plugin.packages().save();
+                new com.minkang.ultimateroulette.pkg.gui.PackageEditGUI(plugin, def).open(p);
+                return;
+            }
+
+            // Empty slot in top: add from cursor if present
+            org.bukkit.inventory.org.bukkit.inventory.ItemStack cursor = e.getCursor();
+            if (cursor != null && cursor.getType() != org.bukkit.Material.AIR) {
+                org.bukkit.inventory.ItemStack add = cursor.clone();
+                add.setAmount(1);
+                def.getItems().add(add);
+                plugin.packages().save();
+                // consume one from cursor
+                org.bukkit.inventory.org.bukkit.inventory.ItemStack cur = cursor.clone();
+                cur.setAmount(Math.max(0, cursor.getAmount()-1));
+                e.setCursor(cur.getAmount()<=0?null:cur);
+                new com.minkang.ultimateroulette.pkg.gui.PackageEditGUI(plugin, def).open(p);
+                return;
+            }
+        }
+    }
+
+    @EventHandler
+    public void onPackageEditDrag(org.bukkit.event.inventory.InventoryDragEvent e) {
+        String title = e.getView().getTitle();
+        if (isPackageEdit(title)) e.setCancelled(true);
     }
 }
