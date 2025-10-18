@@ -564,4 +564,3 @@ public class GuiListener implements Listener {
         String title = e.getView().getTitle();
         if (isPackageEdit(title)) e.setCancelled(true);
     }
-}
