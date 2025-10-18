@@ -391,4 +391,36 @@ if (e.getRawSlot() == 49) {
             if (isSpin(title)) e.setCancelled(true);
         }
     
+
+        private String packageNameFromEditTitle(String title) {
+            String raw = org.bukkit.ChatColor.stripColor(title);
+            String key = "패키지 설정:";
+            int idx = raw.indexOf(key);
+            if (idx < 0) return null;
+            return raw.substring(idx + key.length()).trim();
+        }
+    
+
+        @org.bukkit.event.EventHandler
+        public void onPackageEditClose(org.bukkit.event.inventory.InventoryCloseEvent e) {
+            String title = e.getView().getTitle();
+            if (!isPackageEdit(title)) return;
+            String name = packageNameFromEditTitle(title);
+            if (name == null || name.isEmpty()) return;
+            com.minkang.ultimateroulette.pkg.PackageDef def = plugin.packages().get(name);
+            if (def == null) return;
+
+            org.bukkit.inventory.Inventory inv = e.getInventory();
+            java.util.List<org.bukkit.inventory.ItemStack> items = new java.util.ArrayList<>();
+            for (int slot = 0; slot < Math.min(45, inv.getSize()); slot++) {
+                org.bukkit.inventory.ItemStack it = inv.getItem(slot);
+                if (it != null && it.getType() != org.bukkit.Material.AIR) {
+                    items.add(it.clone());
+                }
+            }
+            def.getItems().clear();
+            def.getItems().addAll(items);
+            plugin.packages().save();
+        }
+    
 }
