@@ -259,65 +259,6 @@ public class GuiListener implements Listener {
     }
 
     // ---------------- Package Edit GUI ----------------
-    @EventHandler
-    public void onPackageEditClick(InventoryClickEvent e) {
-        if (!(e.getWhoClicked() instanceof Player)) return;
-        Player p = (Player) e.getWhoClicked();
-        String title = e.getView().getTitle();
-        if (!isPackageEdit(title)) return;
-
-        Inventory clicked = e.getClickedInventory();
-        Inventory top = e.getView().getTopInventory();
-        Inventory bottom = e.getView().getBottomInventory();
-        boolean isTop = (clicked != null && clicked.equals(top));
-        boolean isBottom = (clicked != null && clicked.equals(bottom));
-
-        String pkg = packageNameFromTitle(title);
-        if (pkg == null || pkg.isEmpty()) return;
-        PackageDef def = plugin.packages().get(pkg);
-        if (def == null) return;
-
-        if (isBottom) {
-            if (e.isShiftClick()) {
-                ItemStack from = e.getCurrentItem();
-                if (from != null && from.getType() != Material.AIR) {
-                    ItemStack add = from.clone();
-                    add.setAmount(1);
-                    def.getItems().add(add);
-                    plugin.packages().save();
-                    e.setCancelled(true);
-                    new com.minkang.ultimateroulette.pkg.gui.PackageEditGUI(plugin, def).open(p);
-                }
-            }
-            return;
-        }
-
-        e.setCancelled(true);
-        int slot = e.getRawSlot();
-        if (slot >= 0 && slot < 45) {
-            if (slot < def.getItems().size()) {
-                if (e.getClick() == ClickType.DROP) {
-                    def.getItems().remove(slot);
-                    plugin.packages().save();
-                    new com.minkang.ultimateroulette.pkg.gui.PackageEditGUI(plugin, def).open(p);
-                    return;
-                }
-            } else {
-                ItemStack cursor = e.getCursor();
-                if (cursor != null && cursor.getType() != Material.AIR) {
-                    ItemStack add = cursor.clone();
-                    add.setAmount(1);
-                    def.getItems().add(add);
-                    plugin.packages().save();
-                    ItemStack cur = cursor.clone();
-                    cur.setAmount(Math.max(0, cursor.getAmount()-1));
-                    e.setCursor(cur.getAmount()<=0?null:cur);
-                    new com.minkang.ultimateroulette.pkg.gui.PackageEditGUI(plugin, def).open(p);
-                    return;
-                }
-            }
-        }
-    }
 
     // ---------------- Helpers for keys ----------------
     private boolean isKeyItem(ItemStack it, KeyDef def) {
