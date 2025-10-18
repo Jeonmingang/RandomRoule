@@ -219,10 +219,16 @@ public class GuiListener implements Listener {
             if (page + 1 < total) new PreviewGUI(def).open(p, page + 1);
             return;
         }
-        if (e.getRawSlot() == 49) { // spin start
-            new SpinGUI(plugin, def).open(p);
-            return;
-        }
+        
+            if (e.getRawSlot() == 49) { // spin start
+                if (!consumeKey(p, def)) {
+                    p.sendMessage(Text.color("&c해당 키가 필요합니다."));
+                    return;
+                }
+                new SpinGUI(plugin, def).open(p);
+                return;
+            }
+    
     }
 
     // ---------------- Spin GUI ----------------
@@ -267,6 +273,28 @@ public class GuiListener implements Listener {
                 .getOrDefault(plugin.keyTag(), PersistentDataType.STRING, null);
         return tag != null && tag.equals(def.getName());
     }
+
+        private boolean consumeKey(Player p, KeyDef def) {
+            ItemStack hand = p.getInventory().getItemInMainHand();
+            if (isKeyItem(hand, def)) {
+                int amt = hand.getAmount();
+                if (amt <= 1) p.getInventory().setItemInMainHand(null);
+                else hand.setAmount(amt - 1);
+                return true;
+            }
+            for (int idx=0; idx<p.getInventory().getSize(); idx++) {
+                ItemStack it = p.getInventory().getItem(idx);
+                if (isKeyItem(it, def)) {
+                    int amt = it.getAmount();
+                    if (amt <= 1) p.getInventory().setItem(idx, null);
+                    else it.setAmount(amt - 1);
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+
     private boolean isPackageKeyItem(ItemStack it, PackageDef def) {
         if (it == null || it.getType() == Material.AIR || !it.hasItemMeta()) return false;
         String tag = it.getItemMeta().getPersistentDataContainer()
@@ -338,4 +366,29 @@ if (e.getRawSlot() == 49) {
             String title = e.getView().getTitle();
             if (isPackageEdit(title)) e.setCancelled(true);
         }
+
+        // ----- Spin GUI: block taking/placing items -----
+        @EventHandler
+        public void onSpinClick(InventoryClickEvent e) {
+            String title = e.getView().getTitle();
+            if (!isSpin(title)) return;
+            // Block ALL interactions in the spin GUI (both top and bottom shift-move)
+            if (e.getClickedInventory() == null) { e.setCancelled(true); return; }
+            boolean isTop = e.getClickedInventory().equals(e.getView().getTopInventory());
+            boolean isBottom = e.getClickedInventory().equals(e.getView().getBottomInventory());
+            if (isTop) {
+                e.setCancelled(true);
+            } else if (isBottom) {
+                // Prevent moving items into the spin gui via shift-click/hotbar swaps
+                if (e.isShiftClick() || e.getClick() == ClickType.NUMBER_KEY || e.getClick() == ClickType.SWAP_OFFHAND) {
+                    e.setCancelled(true);
+                }
+            }
+        }
+        @EventHandler
+        public void onSpinDrag(InventoryDragEvent e) {
+            String title = e.getView().getTitle();
+            if (isSpin(title)) e.setCancelled(true);
+        }
+    
 }
