@@ -115,7 +115,7 @@ public class GuiListener implements Listener {
                         plugin.keys().save();
                         e.setCancelled(true);
                         int page = currentPageFromTitle(title);
-                        new EditGUI(plugin, def, page).open(p);
+                        new EditGUI(plugin, def).open(p);
                         return;
                     }
                 }
@@ -159,7 +159,7 @@ public class GuiListener implements Listener {
                     }
                 }
                 plugin.keys().save();
-                new EditGUI(plugin, def, page).open(p);
+                new EditGUI(plugin, def).open(p);
                 return;
             }
 
@@ -172,7 +172,7 @@ public class GuiListener implements Listener {
                 cur.setAmount(Math.max(0, cursor.getAmount() - 1));
                 e.setCursor(cur.getAmount() <= 0 ? null : cur);
                 plugin.keys().save();
-                new EditGUI(plugin, def, page).open(p);
+                new EditGUI(plugin, def).open(p);
                 return;
             }
         }
@@ -296,33 +296,31 @@ public class GuiListener implements Listener {
     // ---------------- Package Preview/Take ----------------
     @EventHandler
     public void onPackageClick(InventoryClickEvent e) {
-            if (!(e.getWhoClicked() instanceof Player)) return;
-            Player p = (Player) e.getWhoClicked();
-            String title = e.getView().getTitle();
-            if (!isPackagePreview(title)) return;
+if (!(e.getWhoClicked() instanceof Player)) return;
+Player p = (Player) e.getWhoClicked();
+String title = e.getView().getTitle();
+if (!isPackagePreview(title)) return;
 
-            String name = packageNameFromTitle(title);
-            if (name == null || name.isEmpty()) return;
-            com.minkang.ultimateroulette.pkg.PackageDef def = plugin.packages().get(name);
-            if (def == null) return;
+String name = packageNameFromTitle(title);
+if (name == null || name.isEmpty()) return;
+PackageDef def = plugin.packages().get(name);
+if (def == null) return;
 
-            e.setCancelled(true);
-            int slot = e.getRawSlot();
-            if (slot == 49) { // 수령
-                if (!consumePackageKey(p, def)) {
-                    p.sendMessage(com.minkang.ultimateroulette.util.Text.color("&c해당 패키지 키가 필요합니다."));
-                    return;
-                }
-                for (org.bukkit.inventory.ItemStack it : def.getItems()) {
-                    if (it != null && it.getType() != org.bukkit.Material.AIR) {
-                        p.getInventory().addItem(it.clone());
-                    }
-                }
-                p.sendMessage(com.minkang.ultimateroulette.util.Text.color("&a패키지 아이템을 수령했습니다."));
-                p.closeInventory();
-            }
+e.setCancelled(true);
+if (e.getRawSlot() == 49) {
+    if (!consumePackageKey(p, def)) {
+        p.sendMessage(Text.color("&c해당 패키지 키가 필요합니다."));
+        return;
+    }
+    for (ItemStack it : def.getItems()) {
+        if (it != null && it.getType() != Material.AIR) p.getInventory().addItem(it.clone());
+    }
+    p.sendMessage(Text.color("&a패키지 아이템을 수령했습니다."));
+    p.closeInventory();
+}
 
         }
+
 
 
         // ---------------- Package Edit GUI (delegate to GUI class) ----------------
