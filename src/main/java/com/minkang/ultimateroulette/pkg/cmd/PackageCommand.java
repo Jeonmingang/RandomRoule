@@ -61,7 +61,9 @@ public class PackageCommand implements CommandExecutor {
                 if (def == null) { sender.sendMessage(Text.color("&c해당 키 없음")); return true; }
                 ItemStack hand = p.getInventory().getItemInMainHand();
                 if (hand == null || hand.getType()==Material.AIR) { sender.sendMessage(Text.color("&c손에 아이템을 들고 실행하세요.")); return true; }
-                pm.setKeyItem(def.getName(), hand);
+                ItemStack keyCopy = pm.buildKeyItemLore(hand, def);
+                    p.getInventory().setItemInMainHand(keyCopy);
+                    pm.setKeyItem(def.getName(), keyCopy);
                 sender.sendMessage(Text.color("&a전용 패키지 아이템 설정 완료 (로어에 구성 표시)"));
                 return true;
             
