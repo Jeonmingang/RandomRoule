@@ -415,12 +415,38 @@ if (e.getRawSlot() == 49) {
             for (int slot = 0; slot < Math.min(45, inv.getSize()); slot++) {
                 org.bukkit.inventory.ItemStack it = inv.getItem(slot);
                 if (it != null && it.getType() != org.bukkit.Material.AIR) {
-                    items.add(it.clone());
+                    items.add(stripEditLore(it));
                 }
             }
             def.getItems().clear();
             def.getItems().addAll(items);
             plugin.packages().save();
+        }
+    
+
+        private org.bukkit.inventory.ItemStack stripEditLore(org.bukkit.inventory.ItemStack original) {
+            if (original == null) return null;
+            org.bukkit.inventory.ItemStack copy = original.clone();
+            org.bukkit.inventory.meta.ItemMeta meta = copy.getItemMeta();
+            if (meta != null && meta.hasLore()) {
+                java.util.List<String> lore = new java.util.ArrayList<>(meta.getLore());
+                java.util.Iterator<String> it = lore.iterator();
+                while (it.hasNext()) {
+                    String line = it.next();
+                    String plain = org.bukkit.ChatColor.stripColor(line);
+                    if (plain == null) plain = "";
+                    if (plain.contains("수량:") || plain.contains("좌클릭") || plain.contains("우클릭") || plain.contains("드롭")) {
+                        it.remove();
+                    }
+                }
+                if (lore.isEmpty()) {
+                    meta.setLore(null);
+                } else {
+                    meta.setLore(lore);
+                }
+                copy.setItemMeta(meta);
+            }
+            return copy;
         }
     
 }

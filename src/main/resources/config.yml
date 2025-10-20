@@ -74,5 +74,10 @@ lore_templates:
 broadcast:
   lowest_chance:
     enabled: true
-    # 사용 가능한 플레이스홀더: {player}, {key}, {item}
-    message: "&6[랜덤룰렛] &e{player}&7님이 &b{key}&7에서 &d{item}&7(최저 확률)&7을 뽑았습니다! &a축하드립니다!"
+    # 사용 가능한 플레이스홀더: {player}, {key}, {item}, {chance}
+    message: "&6[랜덤룰렛] &e{player}&7님이 &d{key}&7 랜덤 뽑기에서 &b{chance}%&7의 확률을 뚫고 &a{item}&7을 얻었습니다! &a축하드립니다!"
+    sound:
+      enabled: true
+      name: "ENTITY_PLAYER_LEVELUP"
+      volume: 1.0
+      pitch: 1.2
