@@ -199,7 +199,52 @@ String out = raw
                         }
                     } catch (Throwable ignored) {}
 
-                    try { ((SpinGUIHolder) inv.getHolder()).setSpinning(false);} catch (Throwable ignored) {}
+                    
+                    // --- Lowest chance broadcast (1.16.5 compatible) ---
+                    try {
+                        boolean bcEnabled = plugin.getConfig().getBoolean("broadcast.lowest_chance.enabled", true);
+                        if (bcEnabled && def != null && def.getRewards() != null && !def.getRewards().isEmpty()) {
+                            int totalWgt = 0;
+                            int minW = Integer.MAX_VALUE;
+                            for (Reward rw : def.getRewards()) {
+                                int w = Math.max(0, rw.getWeight());
+                                totalWgt += w;
+                                if (w > 0 && w < minW) minW = w;
+                            }
+                            int winW = (win != null ? Math.max(0, win.getWeight()) : 0);
+                            if (minW != Integer.MAX_VALUE && winW == minW) {
+                                double chancePct = (totalWgt > 0 ? (winW * 100.0 / totalWgt) : 0.0);
+                                String chanceStr = String.format(java.util.Locale.US, "%.2f", chancePct);
+                                String raw = plugin.getConfig().getString(
+                                    "broadcast.lowest_chance.message",
+                                    "&6[랜덤룰렛] &e{player}&7님이 &d{key}&7 랜덤 뽑기에서 &b{chance}%&7의 확률을 뚫고 &a{item}&7을 얻었습니다! &a축하드립니다!"
+                                );
+                                String keyName = (def.getName() != null ? def.getName() : "알 수 없음");
+                                String itemName = (win != null && win.getItem() != null && win.getItem().hasItemMeta() && win.getItem().getItemMeta().hasDisplayName())
+                                        ? win.getItem().getItemMeta().getDisplayName()
+                                        : (win != null && win.getItem() != null ? win.getItem().getType().name() : "아이템");
+                                String out = raw.replace("{player}", p.getName())
+                                                .replace("{key}", keyName)
+                                                .replace("{item}", itemName)
+                                                .replace("{chance}", chanceStr);
+                                Bukkit.getServer().broadcastMessage(Text.color(out));
+
+                                boolean sndEnabled = plugin.getConfig().getBoolean("broadcast.lowest_chance.sound.enabled", true);
+                                if (sndEnabled) {
+                                    String sndName = plugin.getConfig().getString("broadcast.lowest_chance.sound.name", "ENTITY_PLAYER_LEVELUP");
+                                    double v = plugin.getConfig().getDouble("broadcast.lowest_chance.sound.volume", 1.0);
+                                    double pc = plugin.getConfig().getDouble("broadcast.lowest_chance.sound.pitch", 1.2);
+                                    org.bukkit.Sound snd;
+                                    try { snd = org.bukkit.Sound.valueOf(sndName); } catch (IllegalArgumentException ex) { snd = org.bukkit.Sound.ENTITY_PLAYER_LEVELUP; }
+                                    for (org.bukkit.entity.Player op : org.bukkit.Bukkit.getOnlinePlayers()) {
+                                        op.playSound(op.getLocation(), snd, (float)v, (float)pc);
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Throwable ignore) { }
+                    // --- /Lowest chance broadcast ---
+try { ((SpinGUIHolder) inv.getHolder()).setSpinning(false);} catch (Throwable ignored) {}
                     p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.2f);
                     p.sendMessage(Text.color("&a보상이 보관함에 지급되었습니다. &7(/랜덤 보관함 으로 확인)"));
                 }
@@ -208,48 +253,6 @@ String out = raw
     }
 
 
-            // --- Lowest chance broadcast (1.16.5 compatible) ---
-            try {
-                boolean bcEnabled = plugin.getConfig().getBoolean("broadcast.lowest_chance.enabled", true);
-                if (bcEnabled && def != null && def.getRewards() != null && !def.getRewards().isEmpty()) {
-                    int totalWgt = 0;
-                    int minW = Integer.MAX_VALUE;
-                    for (Reward rw : def.getRewards()) {
-                        int w = Math.max(0, rw.getWeight());
-                        totalWgt += w;
-                        if (w > 0 && w < minW) minW = w;
-                    }
-                    int winW = (win != null ? Math.max(0, win.getWeight()) : 0);
-                    if (minW != Integer.MAX_VALUE && winW == minW) {
-                        double chancePct = (totalWgt > 0 ? (winW * 100.0 / totalWgt) : 0.0);
-                        String chanceStr = String.format(java.util.Locale.US, "%.2f", chancePct);
-                        String raw = plugin.getConfig().getString(
-                            "broadcast.lowest_chance.message",
-                            "&6[랜덤룰렛] &e{player}&7님이 &d{key}&7 랜덤 뽑기에서 &b{chance}%&7의 확률을 뚫고 &a{item}&7을 얻었습니다! &a축하드립니다!"
-                        );
-                        String keyName = (def.getName() != null ? def.getName() : "알 수 없음");
-                        String itemName = (win != null && win.getItem() != null && win.getItem().hasItemMeta() && win.getItem().getItemMeta().hasDisplayName())
-                                ? win.getItem().getItemMeta().getDisplayName()
-                                : (win != null && win.getItem() != null ? win.getItem().getType().name() : "아이템");
-                        String out = raw.replace("{player}", p.getName())
-                                        .replace("{key}", keyName)
-                                        .replace("{item}", itemName)
-                                        .replace("{chance}", chanceStr);
-                        Bukkit.getServer().broadcastMessage(Text.color(out));
-                        boolean sndEnabled = plugin.getConfig().getBoolean("broadcast.lowest_chance.sound.enabled", true);
-                        if (sndEnabled) {
-                            String sndName = plugin.getConfig().getString("broadcast.lowest_chance.sound.name", "ENTITY_PLAYER_LEVELUP");
-                            double v = plugin.getConfig().getDouble("broadcast.lowest_chance.sound.volume", 1.0);
-                            double pc = plugin.getConfig().getDouble("broadcast.lowest_chance.sound.pitch", 1.2);
-                            org.bukkit.Sound snd;
-                            try { snd = org.bukkit.Sound.valueOf(sndName); } catch (IllegalArgumentException ex) { snd = org.bukkit.Sound.ENTITY_PLAYER_LEVELUP; }
-                            for (org.bukkit.entity.Player op : org.bukkit.Bukkit.getOnlinePlayers()) {
-                                op.playSound(op.getLocation(), snd, (float)v, (float)pc);
-                            }
-                        }
-                    }
-                }
-            } catch (Throwable ignore) { }
-            // --- /Lowest chance broadcast ---
+            
     
 }
